@@ -1,0 +1,7 @@
+name = "Diffusions"
+uuid = "37ad981a-d595-49ae-9c2b-ff1cecd25002"
+authors = ["Ben Murrell <murrellb@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1.8"
