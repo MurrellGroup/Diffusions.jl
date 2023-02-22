@@ -17,4 +17,32 @@ module Diffusions
     include("tractables.jl")
     include("denoiser.jl")
 
+    export
+        #Types
+        Process,
+        DiffusionProcess,
+        SimulationProcess,
+        GaussianStateProcess,
+        DiscreteStateProcess,
+        State,
+        ContinuousState,
+        DiscreteState,
+        #Continuous
+        OrnsteinUhlenbeck,
+        MultiGaussianState,
+        #Discrete
+        IJ,
+        DiscreteState,
+        #functions
+        diffusion_sample,
+        endpoint_conditioned_sample!,
+        forward!,
+        backward!,
+        combine!,
+        forward_sample!,
+        sample!,
+        eq_dist,
+        values,
+        var
+
 end
