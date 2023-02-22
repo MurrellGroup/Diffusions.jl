@@ -67,9 +67,9 @@ function backward!(dest::DiscreteState,
         source::DiscreteState,
         model::IJ,
         t::Float64)
+    #ToDo: check this is the same as F81 using the full matrix exponential.
     pow = exp(-model.beta*model.r*t)
     c1 = ((1 - pow).*model.pi)
-    c2 = (pow .+ c1)
     vsum = sum(source.state .* c1, dims=1)
     dest.state .= pow .* source.state .+ vsum
 end
@@ -80,7 +80,7 @@ function forward!(dest::DiscreteState,
         model::IJ,
         t::Float64)
     #ToDo: check this is the same as F81 using the full matrix exponential.
-    scals = sum(source.state,dims = 1)[:] #Requires V1.0 fix.
+    scals = sum(source.state,dims = 1)[:]
     pow = exp(-model.beta*model.r*t)
     c1 = ((1 - pow).*model.pi)
     c2 = (pow .+ ((1 - pow).*model.pi))

@@ -12,6 +12,7 @@ function diffusion_sample(
     g1B = deepcopy(initial_state) #The middle value during sampling
     g2 = deepcopy(initial_state) #The current value
 
+    #For tracking the diffusion trajectory
     if track
         rev_steps = [T]
         rev_values = [values(g2)]
