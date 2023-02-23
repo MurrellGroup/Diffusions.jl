@@ -6,6 +6,7 @@
 #3: Add flexible type sigs to all of these so that they play nice with NN training. We don't need the diffusion to run on the GPU (or do we? Need to think about this), but they should at least not be doing loads of type conversion.
 
 module Diffusions
+    using Requires
 
     using Distributions
     using LinearAlgebra
@@ -16,6 +17,18 @@ module Diffusions
     include("discrete.jl")
     include("tractables.jl")
     include("denoiser.jl")
+
+    #Optional dependencies
+    function __init__()
+        #Have Rotations and Quaternions installed if you want to do rotational diffusion
+        @require Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc" begin
+            @require Quaternions = "94ee1d12-ae83-5a48-8b1c-48b8ff168ae0" begin
+                using .Rotations
+                using .Quaternions
+                include("rotational.jl")
+            end
+        end
+    end
 
     export
         #Types
