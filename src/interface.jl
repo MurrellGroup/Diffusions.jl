@@ -10,8 +10,8 @@ Draw samples forward (i.e., diffuse).
 """
 sampleforward(process, t, x) = sampleforward(Random.default_rng(), process, t, x)
 
-sampleforward(rng::AbstractRNG, process, t, x) = sampleforward.(rng, process, t, x)
-sampleforward(rng::AbstractRNG, process::Process, t, x) = sample(rng, forward(process, x, 0, t))
+sampleforward(rng::AbstractRNG, process, t::Real, x) = sampleforward.(rng, process, t, x)
+sampleforward(rng::AbstractRNG, process::Process, t::Real, x) = sample(rng, forward(process, x, 0, t))
 
 """
     samplebackward(guess, process, timesteps, x)
