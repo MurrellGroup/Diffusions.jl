@@ -30,18 +30,25 @@ function samplebackward(rng::AbstractRNG, guess, process, timesteps, x)
     checktimesteps(timesteps)
     i = lastindex(timesteps)
     t = timesteps[i]
-    x_t = x
     while i > firstindex(timesteps)
         s = timesteps[i-1]
-        x_0 = guess(x_t, t)
-        prior = forward.(process, x_0, 0, s)
-        likelihood = backward.(process, x_t, s, t)
-        x_t = sample.(rng, combine.(prior, likelihood))  # sample from the posterior
+        x_0 = guess(x, t)
+        x = endpoint_conditioned_sample(rng, process, s, t, x_0, x)
         t = s
         i -= 1
     end
-    return x_t
+    return x
 end
+
+# sample x at time s conditioned on x_0 at time 0 and x_t at time t
+function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real, t::Real, x_0, x_t)
+    prior = forward(process, x_0, 0, s)
+    likelihood = backward(process, x_t, s, t)
+    return sample(rng, combine(prior, likelihood))
+end
+
+endpoint_conditioned_sample(rng::AbstractRNG, process, s::Real, t::Real, x_0, x_t) =
+    endpoint_conditioned_sample.(rng, process, s, t, x_0, x_t)
 
 function checktimesteps(timesteps)
     length(timesteps) ≥ 2 || throw(ArgumentError("timesteps must have at least two timesteps"))
