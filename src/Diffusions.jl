@@ -11,12 +11,17 @@ module Diffusions
     using Distributions
     using LinearAlgebra
     using StatsBase
+    using OneHotArrays: onehotbatch
+    using Random: Random, AbstractRNG
 
     include("types.jl")
+    include("randomvariable.jl")
     include("continuous.jl")
     include("discrete.jl")
     include("tractables.jl")
     include("denoiser.jl")
+    include("tracker.jl")
+    include("interface.jl")
 
     #Optional dependencies
     function __init__()
@@ -56,6 +61,8 @@ module Diffusions
         sample!,
         eq_dist,
         values,
-        var
+        var,
+        sampleforward,
+        samplebackward
 
 end

@@ -43,48 +43,33 @@ end
 values(g::MultiDiscreteState) = argmax.(eachcol(g.state))
 
 #This is basically F81, but with arb state size and linear prop ops
-#Can maybe nuke the "normalize"
 #IJ = "Independent Jumps", as in every time a mutation event happens, you jump to a new state independent of the current state.
-mutable struct IJ <: DiscreteStateProcess
-    r::Float64
-    pi::Vector{Float64}
-    beta::Float64
+struct IJ{T <: Real} <: DiscreteStateProcess
+    r::T
+    π::Vector{T}
+    β::T
 
-    function IJ(r::Float64,pi::Vector{Float64}; normalize=false)
-        piNormed = pi ./ sum(pi)
-        beta = normalize ? 1/(1-sum(abs2.(piNormed))) : 1.0
-        new(r,piNormed,beta)
-    end
-    function IJ(pi::Vector{Float64}; normalize=false)
-        IJ(1.0,pi;normalize=normalize)
-    end
-    function IJ(states::Int64; normalize=false)
-        IJ(1.0,ones(states) ./ states;normalize=normalize)
+    function IJ(r::T, π::AbstractVector{<: T}) where T <: Real
+        π = π ./ sum(π)
+        β = inv(1 - sum(abs2, π))
+        return new{T}(r, π, β)
     end
 end
 
-function backward!(dest::DiscreteState,
-        source::DiscreteState,
-        model::IJ,
-        t::Float64)
-    #ToDo: check this is the same as F81 using the full matrix exponential.
-    pow = exp(-model.beta*model.r*t)
-    c1 = ((1 - pow).*model.pi)
-    vsum = sum(source.state .* c1, dims=1)
-    dest.state .= pow .* source.state .+ vsum
+function forward(process::IJ, x_s::AbstractArray, s::Real, t::Real)
+    (;r, π, β) = process
+    pow = exp(-β * r * (t - s))
+    c1 = (1 - pow) .* π
+    c2 = pow .+ c1
+    return CategoricalVariables(@. c1 * (1 - x_s) + c2 * x_s)
 end
 
-#For speed reasons, these partitions are stored in wide format. Should consider switching everything to that.
-function forward!(dest::DiscreteState,
-        source::DiscreteState,
-        model::IJ,
-        t::Float64)
-    #ToDo: check this is the same as F81 using the full matrix exponential.
-    scals = sum(source.state,dims = 1)[:]
-    pow = exp(-model.beta*model.r*t)
-    c1 = ((1 - pow).*model.pi)
-    c2 = (pow .+ ((1 - pow).*model.pi))
-    dest.state .= (scals' .- source.state).*c1 .+ source.state.*c2
+function backward(process::IJ, x_t::AbstractArray, s::Real, t::Real)
+    (;r, π, β) = process
+    pow = exp(-β * r * (t - s))
+    c1 = (1 - pow) .* π
+    c2 = pow .+ c1
+    return @. c1 * (1 - x_t) + c2 * x_t
 end
 
 eq_dist(model::IJ) = Categorical(model.pi)

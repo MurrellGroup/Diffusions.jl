@@ -3,29 +3,29 @@ export
     MultiRotationState,
     features
 
-function randrot(σsq)
+function randrot(rng, σsq)
     σ = sqrt(σsq)
-    QuatRotation(exp(quat(0, randn() * σ, randn() * σ, randn() * σ)))
+    QuatRotation(exp(quat(0, randn(rng) * σ, randn(rng) * σ, randn(rng) * σ)))
 end
 
 Quaternions.slerp(qa::QuatRotation{Float64},qb::QuatRotation{Float64},t) = QuatRotation(slerp(qa.q,qb.q,t))
 
 #T is in units of var
-function rotation_diffuse(Rstart, T; max_var_step = 0.05)
+function rotation_diffuse(rng, Rstart, T; max_var_step = 0.05)
     remaining_var = T
     B = copy(Rstart)
     for t in max_var_step:max_var_step:T
-        B = B * randrot(max_var_step)
+        B = B * randrot(rng, max_var_step)
         remaining_var = T-t
     end
-    B = B * randrot(remaining_var)
+    B = B * randrot(rng, remaining_var)
     return B
 end
 
 #T is in units of var
-function rotation_bridge(Rstart, Rend, eps, T; max_var_step = 0.05)
-    B = rotation_diffuse(Rstart, T - eps, max_var_step = max_var_step)
-    C = rotation_diffuse(B, eps, max_var_step = max_var_step)
+function rotation_bridge(rng, Rstart, Rend, eps, T; max_var_step = 0.05)
+    B = rotation_diffuse(rng, Rstart, T - eps, max_var_step = max_var_step)
+    C = rotation_diffuse(rng, B, eps, max_var_step = max_var_step)
     difference_rot = slerp(C, Rend, (T-eps)/T)
     return B * C' * difference_rot
 end
@@ -50,16 +50,24 @@ end
 
 function forward_sample!(end_state,init_state,P::RotDiffusionProcess,T)
     for ix in CartesianIndices(init_state.rots)
-        end_state.rots[ix] = rotation_diffuse(init_state.rots[ix], T*P.rate)
+        end_state.rots[ix] = rotation_diffuse(rng, init_state.rots[ix], T*P.rate)
     end
 end
 
-#We don't use g1B here, but it is present because it saves copying for other kinds of process.
-#Could likely be improved
-function endpoint_conditioned_sample!(g0::MultiRotationState,g1F::MultiRotationState,g1B::MultiRotationState,g2::MultiRotationState,P::RotDiffusionProcess,T,eps)
-    for ix in CartesianIndices(g0.rots)
-        g1F.rots[ix] = rotation_bridge(g0.rots[ix], g2.rots[ix], eps*P.rate, T*P.rate)
+function sampleforward(rng::AbstractRNG, process::RotDiffusionProcess, t::Real, x)
+    x_t = MultiRotationState(size(x.rots)...)
+    for i in eachindex(x.rots)
+        x_t.rots[i] = rotation_diffuse(rng, x.rots[i], t * process.rate)
     end
+    return x_t
+end
+
+function endpoint_conditioned_sample(rng::AbstractRNG, process::RotDiffusionProcess, s::Real, t::Real, x_0, x_t)
+    x_s = MultiRotationState(size(x_0.rots)...)
+    for i in eachindex(x_0.rots)
+        x_s.rots[i] = rotation_bridge(rng, x_0.rots[i], x_t.rots[i], (t - s) * process.rate, t * process.rate)
+    end
+    return x_s
 end
 
 values(r::MultiRotationState) = copy(r.rots)
