@@ -1,16 +1,11 @@
 #OU process
-mutable struct OrnsteinUhlenbeck <: GaussianStateProcess
-    mean::Float64
-    volatility::Float64
-    reversion::Float64
-    function OrnsteinUhlenbeck(
-        mean::Float64,
-        volatility::Float64,
-        reversion::Float64,
-    )
-        new(mean, volatility, reversion)
-    end
+struct OrnsteinUhlenbeck{T <: Real} <: GaussianStateProcess
+    mean::T
+    volatility::T
+    reversion::T
 end
+
+OrnsteinUhlenbeck(mean::Real, volatility::Real, reversion::Real) = OrnsteinUhlenbeck(float.(promote(mean, volatility, reversion))...)
 
 var(model::OrnsteinUhlenbeck) = (model.volatility^2) / (2 * model.reversion)
 
@@ -38,8 +33,9 @@ function forward!(
     dest::MultiGaussianState,
     source::MultiGaussianState,
     process::OrnsteinUhlenbeck,
-    t::Float64,
+    t::Real,
 )
+    t = oftype(process.mean, t)
     #if source.var > 0.000001
     #    @error "OU forward diffusion only currently implemented from a zero-variance point mass"
     #end
@@ -54,8 +50,9 @@ function backward!(
     dest::MultiGaussianState,
     source::MultiGaussianState,
     process::OrnsteinUhlenbeck,
-    t::Float64,
+    t::Real,
 )
+    t = oftype(process.mean, t)
     #if source.var > 0.000001
     #    @error "OU backward diffusion only currently implemented from a zero-variance point mass"
     #end
@@ -74,3 +71,17 @@ end
 
 #This is what gets used for tracking the reverse sampling
 values(g::MultiGaussianState) = copy(g.mean)
+
+function forward(process::OrnsteinUhlenbeck, x_s::AbstractArray, s::Real, t::Real)
+    dest = MultiGaussianState(similar(x_s), similar(x_s))
+    source = MultiGaussianState(x_s, [])  # the second field is not used
+    forward!(dest, source, process, t - s)
+    return GaussianVariables(dest.mean, sqrt.(dest.var))
+end
+
+function backward(process::OrnsteinUhlenbeck, x_t::AbstractArray, s::Real, t::Real)
+    dest = MultiGaussianState(similar(x_t), similar(x_t))
+    source = MultiGaussianState(x_t, [])  # the second field is not used
+    backward!(dest, source, process, t - s)
+    return (μ = dest.mean, σ = sqrt.(dest.var))
+end
