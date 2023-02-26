@@ -20,6 +20,7 @@ module Diffusions
     include("discrete.jl")
     include("tractables.jl")
     include("denoiser.jl")
+    include("tracker.jl")
     include("interface.jl")
 
     #Optional dependencies

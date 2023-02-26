@@ -24,16 +24,19 @@ Draw samples backward (i.e., denoise).
 - `timesteps`: a vector of positive times (e.g., `5.0 * (1 - 0.05).^(100:-1:0)`)
 - `x`: data points at time `timesteps[end]` (e.g., samples from the equilibrium distribution)
 """
-samplebackward(guess, process, timesteps, x) = samplebackward(Random.default_rng(), guess, process, timesteps, x)
+samplebackward(guess, process, timesteps, x; tracker = NullTracker()) =
+    samplebackward(Random.default_rng(), guess, process, timesteps, x; tracker)
 
-function samplebackward(rng::AbstractRNG, guess, process, timesteps, x)
+function samplebackward(rng::AbstractRNG, guess, process, timesteps, x; tracker = NullTracker())
     checktimesteps(timesteps)
     i = lastindex(timesteps)
     t = timesteps[i]
+    track!(tracker, t, x)
     while i > firstindex(timesteps)
         s = timesteps[i-1]
         x_0 = guess(x, t)
         x = endpoint_conditioned_sample(rng, process, s, t, x_0, x)
+        track!(tracker, s, x)
         t = s
         i -= 1
     end
