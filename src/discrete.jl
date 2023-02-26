@@ -61,7 +61,7 @@ function forward(process::IJ, x_s::AbstractArray, s::Real, t::Real)
     pow = exp(-β * r * (t - s))
     c1 = (1 - pow) .* π
     c2 = pow .+ c1
-    return CategoricalVariables(max.(c1 .* (1 .- x_s) .+ c2 .* x_s, 0))
+    return CategoricalVariables(@. c1 * (1 - x_s) + c2 * x_s)
 end
 
 function backward(process::IJ, x_t::AbstractArray, s::Real, t::Real)
@@ -69,7 +69,7 @@ function backward(process::IJ, x_t::AbstractArray, s::Real, t::Real)
     pow = exp(-β * r * (t - s))
     c1 = (1 - pow) .* π
     c2 = pow .+ c1
-    return max.(c1 .* (1 .- x_t) .+ c2 .* (x_t), 0)
+    return @. c1 * (1 - x_t) + c2 * x_t
 end
 
 eq_dist(model::IJ) = Categorical(model.pi)
