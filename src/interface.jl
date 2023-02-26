@@ -6,7 +6,7 @@ Draw samples forward (i.e., diffuse).
 # Arguments
 - `process`: a diffusion process (e.g., an `OrnsteinUhlenbeck` process)
 - `t`: a taregt time
-- `x`: a sample at time 0
+- `x`: data points at time 0
 """
 sampleforward(process, t, x) = sampleforward(Random.default_rng(), process, t, x)
 
@@ -22,7 +22,7 @@ Draw samples backward (i.e., denoise).
 - `guess`: a callable object; `guess(X_t, t)` returns the guess (e.g., expectation) of X_0 given X_t at time t
 - `process`: a diffusion process (e.g., an `OrnsteinUhlenbeck` process)
 - `timesteps`: a vector of positive times (e.g., `5.0 * (1 - 0.05).^(100:-1:0)`)
-- `x`: a data point at time `timesteps[end]` (e.g., a sample from the equilibrium distribution)
+- `x`: data points at time `timesteps[end]` (e.g., samples from the equilibrium distribution)
 """
 samplebackward(guess, process, timesteps, x) = samplebackward(Random.default_rng(), guess, process, timesteps, x)
 
