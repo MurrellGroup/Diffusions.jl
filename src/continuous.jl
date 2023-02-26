@@ -76,12 +76,12 @@ function forward(process::OrnsteinUhlenbeck, x_s::AbstractArray, s::Real, t::Rea
     dest = MultiGaussianState(similar(x_s), similar(x_s))
     source = MultiGaussianState(x_s, [])  # the second field is not used
     forward!(dest, source, process, t - s)
-    return GaussianVariables(dest.mean, sqrt.(dest.var))
+    return GaussianVariables(dest.mean, dest.var)
 end
 
 function backward(process::OrnsteinUhlenbeck, x_t::AbstractArray, s::Real, t::Real)
     dest = MultiGaussianState(similar(x_t), similar(x_t))
     source = MultiGaussianState(x_t, [])  # the second field is not used
     backward!(dest, source, process, t - s)
-    return (μ = dest.mean, σ = sqrt.(dest.var))
+    return (μ = dest.mean, σ² = dest.var)
 end
