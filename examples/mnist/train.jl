@@ -38,18 +38,16 @@ state = device(state)
 
 # relative weight of the classification loss relative to the reconstruction loss
 λ = 10.0f0
+agg = sum
 
 starttime = now()
 for epoch in 1:n_epochs
-    agg = sum
-
     loss_train = 0.0
     for (x, y) in dataloader_train
-        b = size(x)[end]
         t = sampletime()
         scale = sqrt(1 - exp(-t))
         diffused = sampleforward(process, t, (x, y))
-        t = device(fill(t, b))
+        t = device(fill(t, size(x)[end]))
         x, y, diffused = device(x), device(y), device(diffused)
         loss, grads = Flux.withgradient(model) do model
             x̂, ŷ = model(diffused, t)
@@ -63,25 +61,23 @@ for epoch in 1:n_epochs
 
     loss_reconst = loss_class = 0.0
     for (x, y) in dataloader_test
-        b = size(x)[end]
         t = sampletime()
         scale = sqrt(1 - exp(-t))
         diffused = sampleforward(process, t, (x, y))
-        t = device(fill(t, b))
+        t = device(fill(t, size(x)[end]))
         x, y, diffused = device(x), device(y), device(diffused)
         x̂, ŷ = model(diffused, t)
         loss_reconst += mse(sigmoid.(x̂), x; agg) / scale
         loss_class += logitcrossentropy(ŷ, y; agg) / scale
-        n += 1
     end
     loss_test = loss_reconst + λ * loss_class
-
-    elapsed = Dates.value(now() - starttime) / 1000
-    @printf "%d: train=%f test=%f reconst=%f class=%f elapsed=%.1f\n" epoch loss_train loss_test loss_reconst loss_class elapsed
 
     if epoch % 50 == 0
         let unet = cpu(model), name = @sprintf "mnist-unet-%03d.bson" epoch
             @save name unet
         end
     end
+
+    elapsed = Dates.value(now() - starttime) / 1000
+    @printf "%d: train=%f test=%f reconst=%f class=%f elapsed=%.1f\n" epoch loss_train loss_test loss_reconst loss_class elapsed
 end
