@@ -22,6 +22,7 @@ module Diffusions
     include("denoiser.jl")
     include("tracker.jl")
     include("interface.jl")
+    include("angle.jl")
 
     #Optional dependencies
     function __init__()
