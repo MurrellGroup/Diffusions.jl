@@ -12,7 +12,7 @@ end
 slerp(qa::QuatRotation, qb::QuatRotation, t::Real) = QuatRotation(Quaternions.slerp(qa.q, qb.q, t))
 
 #T is in units of var
-function rotation_diffuse(rng::AbstractRNG, Rstart::QuatRotation, T::Real; max_var_step::Real = 0.05)
+function rotation_diffuse(rng::AbstractRNG, Rstart::QuatRotation, T::Real; max_var_step::Real = oftype(T, 0.05))
     remaining_var = T
     B = Rstart
     for t in max_var_step:max_var_step:T
@@ -30,7 +30,7 @@ function rotation_bridge(
     Rend::QuatRotation,
     eps::Real,
     T::Real;
-    max_var_step::Real = 0.05
+    max_var_step::Real = oftype(T, 0.05)
 )
     B = rotation_diffuse(rng, Rstart, T - eps; max_var_step)
     C = rotation_diffuse(rng, B, eps; max_var_step)
