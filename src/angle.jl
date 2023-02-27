@@ -9,18 +9,18 @@ end
 
 normangle(v) = rewrap(v, -pi, pi)
 
-function randangle(σsq)
+function randangle(rng, σsq)
     σ = sqrt(σsq)
-    return randn() * σ
+    return randn(rng) * σ
 end
 
 # T is in units of var
-angle_diffuse(A, T) =  A + randangle(T)
+angle_diffuse(rng, A, T) =  A + randangle(rng, T)
 
 # T is in units of var
-function angle_bridge(Astart, Aend, eps, T)
-    B = angle_diffuse(Astart, T - eps)
-    C = angle_diffuse(B, eps)
+function angle_bridge(rng, Astart, Aend, eps, T)
+    B = angle_diffuse(rng, Astart, T - eps)
+    C = angle_diffuse(rng, B, eps)
     C = normangle(C)
     Aend = normangle(Aend)
     if Aend > C
@@ -60,9 +60,28 @@ mutable struct MultiAngleState <: ContinuousState
     end
 end
 
-function forward_sample!(end_state,init_state,P::AngleDiffusionProcess,T; max_var_step = 0.05)
+function sampleforward(rng::AbstractRNG, process::AngleDiffusionProcess, t::Real, x)
+    x_t = MultiAngleState(size(x.angles)...)
+    for i in eachindex(x.angles)
+        x_t.angles[i] = angle_diffuse(rng, x.angles[i], t * process.rate)
+    end
+    return x_t
+end
+
+function endpoint_conditioned_sample(rng::AbstractRNG, process::AngleDiffusionProcess, s::Real, t::Real, x_0, x_t)
+    x_s = MultiAngleState(size(x_0.angles)...)
+    for i in eachindex(x_0.angles)
+        x_s.angles[i] = angle_bridge(rng, x_0.angles[i], x_t.angles[i], (t - s) * process.rate, t * process.rate)
+    end
+    return x_s
+end
+
+values(x::MultiAngleState) = copy(x.angles)
+
+#=
+function forward_sample!(rng, end_state,init_state,P::AngleDiffusionProcess,T; max_var_step = 0.05)
     for ix in CartesianIndices(init_state.angles)
-        end_state.angles[ix] = angle_diffuse(init_state.angles[ix], T*P.rate)
+        end_state.angles[ix] = angle_diffuse(rng, init_state.angles[ix], T*P.rate)
     end
 end
 
@@ -73,5 +92,4 @@ function endpoint_conditioned_sample!(g0::MultiAngleState,g1F::MultiAngleState,g
         g1F.angles[ix] = angle_bridge(g0.angles[ix], g2.angles[ix], eps*P.rate, T*P.rate)
     end
 end
-
-values(x::MultiAngleState) = copy(x.angles)
+=#
