@@ -27,18 +27,33 @@ ncategories(X::CategoricalVariables) = size(X.p, 1)
 
 Base.size(X::CategoricalVariables) = Base.tail(size(X.p))
 
-function sample(rng::AbstractRNG, X::CategoricalVariables)
-    x = zeros(Int, size(X))
-    for i in CartesianIndices(size(X))
-        x[i] = rand(rng, Categorical(X.p[:,i]))
-    end
-    return onehotbatch(x, 1:ncategories(X))
-end
+sample(rng::AbstractRNG, X::CategoricalVariables) = randcat(rng, X.p)
 
 function combine(X::CategoricalVariables, lik)
     p = copy(X.p) .* lik
     for i in CartesianIndices(size(X))
-        p[:,i] ./= sum(p[:,i])
+        p[:,i] ./= sum(@view p[:,i])
     end
     return CategoricalVariables(p)
+end
+
+# Random sampling from categorical distributions
+randcat(p::AbstractArray) = randcat(Random.default_rng(), p)
+
+function randcat(rng::AbstractRNG, p::AbstractArray)
+    K = size(p, 1)
+    @assert K ≥ 1
+    X = zeros(Int, Base.tail(size(p)))
+    for ix in CartesianIndices(size(X))
+        # This algorithm is O(K), but it is fine because we don't generate many
+        # samples from the same distribution.
+        u = rand(rng, eltype(p))
+        k = 0
+        while u ≥ 0 && k < K
+            k += 1
+            u -= p[k,ix]
+        end
+        X[ix] = k
+    end
+    return onehotbatch(X, 1:K)
 end
