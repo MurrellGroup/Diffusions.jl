@@ -68,8 +68,7 @@ function backward(process::IJ, x_t::AbstractArray, s::Real, t::Real)
     (;r, π, β) = process
     pow = exp(-β * r * (t - s))
     c1 = (1 - pow) .* π
-    c2 = pow .+ c1
-    return @. c1 * (1 - x_t) + c2 * x_t
+    return pow .* x_t .+ sum(x_t .* c1, dims = 1)
 end
 
 eq_dist(model::IJ) = Categorical(model.pi)
