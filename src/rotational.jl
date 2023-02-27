@@ -9,7 +9,7 @@ function randrot(rng::AbstractRNG, σ²::Real)
     return QuatRotation(exp(quat(0, randn(rng, T) * σ, randn(rng, T) * σ, randn(rng, T) * σ)))
 end
 
-Quaternions.slerp(qa::QuatRotation{Float64},qb::QuatRotation{Float64},t) = QuatRotation(slerp(qa.q,qb.q,t))
+slerp(qa::QuatRotation, qb::QuatRotation, t::Real) = QuatRotation(Quaternions.slerp(qa.q, qb.q, t))
 
 #T is in units of var
 function rotation_diffuse(rng::AbstractRNG, Rstart::QuatRotation, T::Real; max_var_step::Real = 0.05)
