@@ -3,7 +3,7 @@ using Dates: Dates, now
 using Diffusions: OrnsteinUhlenbeck, IJ, sampleforward
 using Distributions: Uniform
 using Flux.Data: DataLoader
-using Flux.Losses: mse, logitbinarycrossentropy, logitcrossentropy
+using Flux.Losses: mse, logitcrossentropy
 using MLDatasets: MNIST
 using OneHotArrays: onehotbatch
 using Optimisers: Optimisers, WeightDecay, Adam
@@ -12,64 +12,76 @@ using Statistics: mean
 
 include("model.jl")
 
-n_epochs = 50
-batchsize = 128
+n_epochs = 100
+batchsize = 512
 
+# Data loading
 preprocess((x, y)) = reshape(x, 28, 28, 1, :), onehotbatch(y, 0:9)
 xtrain, ytrain = preprocess(MNIST(:train)[:])
 xtest, ytest = preprocess(MNIST(:test)[:])
 dataloader_train = DataLoader((xtrain, ytrain); batchsize)
 dataloader_test = DataLoader((xtest, ytest); batchsize)
 
-t_min = 1f-4
-t_max = 5.0f0
-sampletime() = Float32(exp(rand(Uniform(log(t_min), log(t_max)))))
-
-p = ones(Float32, 10) ./ 10  # equilibrium distribution
-process = (OrnsteinUhlenbeck(0, 1, 0.5f0), IJ(2.0f0, p))
-
+# Model and optimizer setup
 model = UNet()
-optim = Optimisers.OptimiserChain(WeightDecay(1f-3), Adam(1f-4))
+optim = Adam(1f-3)
 state = Optimisers.setup(optim, model)
 
 device = gpu
 model = device(model)
 state = device(state)
 
+# Diffusion scheduling
+p = ones(Float32, 10) ./ 10  # equilibrium distribution
+process = (OrnsteinUhlenbeck(0, 1, 0.5f0), IJ(2.0f0, p))
+
+t_min = 1f-4
+t_max = 5.0f0
+sampletime() = Float32(exp(rand(Uniform(log(t_min), log(t_max)))))
+
+# Diffuse a batch of images and labels up to random times
+function diffuse(x, y)
+    diffused = (similar(x), similar(y))
+    t = Float32[]
+    for i in axes(x, 4)
+        time = sampletime()
+        diffused[1][:,:,:,i], diffused[2][:,i] =
+            sampleforward(process, time, (x[:,:,:,i], y[:,i]))
+        push!(t, time)
+    end
+    return diffused, t
+end
+
 # relative weight of the classification loss relative to the reconstruction loss
-λ = 10.0f0
-agg = sum
+λ = 1
 
 starttime = now()
 for epoch in 1:n_epochs
     loss_train = 0.0
     for (x, y) in dataloader_train
-        t = sampletime()
-        scale = sqrt(1 - exp(-t))
-        diffused = sampleforward(process, t, (x, y))
-        t = device(fill(t, size(x)[end]))
-        x, y, diffused = device(x), device(y), device(diffused)
+        diffused, t = diffuse(x, y)
+        x, y, diffused, t = device((x, y, diffused, t))
         loss, grads = Flux.withgradient(model) do model
             x̂, ŷ = model(diffused, t)
-            reconst = mse(sigmoid.(x̂), x; agg)
-            class = logitcrossentropy(ŷ, y; agg)
-            return (reconst + λ * class) / scale
+            reconst = mse(sigmoid.(x̂), x; agg = mean)
+            class = logitcrossentropy(ŷ, y; agg = mean)
+            return reconst + λ * class
         end
-        isfinite(loss) && Optimisers.update!(state, model, grads[1])
+        Optimisers.update!(state, model, grads[1])
         loss_train += loss
     end
+    loss_train /= length(dataloader_train)
 
     loss_reconst = loss_class = 0.0
     for (x, y) in dataloader_test
-        t = sampletime()
-        scale = sqrt(1 - exp(-t))
-        diffused = sampleforward(process, t, (x, y))
-        t = device(fill(t, size(x)[end]))
-        x, y, diffused = device(x), device(y), device(diffused)
+        diffused, t = diffuse(x, y)
+        x, y, diffused, t = device((x, y, diffused, t))
         x̂, ŷ = model(diffused, t)
-        loss_reconst += mse(sigmoid.(x̂), x; agg) / scale
-        loss_class += logitcrossentropy(ŷ, y; agg) / scale
+        loss_reconst += mse(sigmoid.(x̂), x; agg = mean)
+        loss_class += logitcrossentropy(ŷ, y; agg = mean)
     end
+    loss_reconst /= length(dataloader_test)
+    loss_class /= length(dataloader_test)
     loss_test = loss_reconst + λ * loss_class
 
     if epoch % 50 == 0
