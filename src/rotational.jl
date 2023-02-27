@@ -4,8 +4,9 @@ export
     features
 
 function randrot(rng::AbstractRNG, σ²::Real)
-    σ = √σ²
-    return QuatRotation(exp(quat(0, randn(rng) * σ, randn(rng) * σ, randn(rng) * σ)))
+    σ = √float(σ²)
+    T = typeof(σ)
+    return QuatRotation(exp(quat(0, randn(rng, T) * σ, randn(rng, T) * σ, randn(rng, T) * σ)))
 end
 
 Quaternions.slerp(qa::QuatRotation{Float64},qb::QuatRotation{Float64},t) = QuatRotation(slerp(qa.q,qb.q,t))
