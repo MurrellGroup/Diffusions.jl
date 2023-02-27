@@ -18,6 +18,7 @@ module Diffusions
     include("randomvariable.jl")
     include("continuous.jl")
     include("discrete.jl")
+    include("angles.jl")
     include("tractables.jl")
     include("denoiser.jl")
     include("tracker.jl")
@@ -48,6 +49,7 @@ module Diffusions
         #Continuous
         OrnsteinUhlenbeck,
         MultiGaussianState,
+        WrappedBrownianMotion,
         #Discrete
         IJ,
         DiscreteState,
@@ -62,7 +64,9 @@ module Diffusions
         eq_dist,
         values,
         var,
+        reangle,
         sampleforward,
-        samplebackward
+        samplebackward,
+        endpoint_conditioned_sample
 
 end
