@@ -1,0 +1,64 @@
+using Plots, Distributions, Diffusions
+
+function circular_mean(angles, weights = ones(length(angles)))
+    return atan(sum(sin.(angles) .* weights), sum(cos.(angles) .* weights))
+end
+
+function wrapped_combine(mu, var, back_mu, back_var)
+    t_mu = [back_mu + k*2*pi for k in -10:1:10]
+    new_var = 1 ./ (1 ./ var .+ 1 ./ back_var)
+    new_means = new_var .* (mu ./ var .+ t_mu ./ back_var)
+    log_norm_consts =
+        -0.5 .* (
+            log.(2 .* pi .* (var .* back_var ./ new_var)) .+
+            (mu^2 ./ var) .+
+            (t_mu.^2 ./ back_var) .- (new_means.^2 ./ new_var)
+        )
+    return new_means , log_norm_consts
+end
+
+function expec(x_t, t, P, target)
+    backvar = P.rate*t
+    mus,sigs,weights = target
+    ms = Float64[]
+    lncs = Float64[]
+    for i in 1:length(weights)
+        m,l = wrapped_combine(mus[i], sigs[i]^2, x_t, backvar)
+        l .= l .+ log(weights[i])
+        ms = vcat(ms,m)
+        lncs = vcat(lncs,l)
+    end
+    ncs = exp.(lncs .- maximum(lncs))
+    ncs .= ncs ./ sum(ncs)
+    return circular_mean(ms, ncs)
+end
+
+function expectation(x_t, t; P = P, target = (mus,sigs,weights))
+    x_0 = similar(x_t)
+    for i in CartesianIndices(x_t)
+        x_0[i] = expec(x_t[i], t, P, target)
+    end
+    return x_0
+end
+
+function rewrap(x,lb,ub)
+    mod(x-lb,ub-lb)+lb
+end
+
+function wrapped_normal_pdf(mu,sig,x)
+    mu = rewrap(mu,-pi,pi)
+    d = Normal(mu,sig)
+    sum(pdf.(d,(-20*2pi+x):2pi:(20*2pi+x)))
+end
+
+weights = [1/8,1/8,1/4,1/2]
+mus, sigs = [pi-pi/10,pi, pi/2, 0], [0.5,0.2, 0.05, 1.0]
+ps = sum([weights[i] .* wrapped_normal_pdf.(mus[i],sigs[i],-pi:pi/240:pi) for i in 1:4])
+
+P = WrappedBrownianMotion{Float64}(1.0)
+x_T = rand(Uniform(-pi,pi),20000);
+timesteps = reverse([20 * 0.95^i for i in 0:400]);
+@time samp = samplebackward(expectation, P, timesteps, x_T);
+
+plot(-pi:pi/240:pi,ps)
+histogram!(samp, bins = -pi:pi/60:pi, normalize=:pdf, label = "Draws", linewidth = 0.0, xlim = (-pi,pi), alpha = 0.5)
