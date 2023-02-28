@@ -61,10 +61,14 @@ for epoch in 1:n_epochs
     for (x, y) in dataloader_train
         diffused, t = diffuse(x, y)
         x, y, diffused, t = device((x, y, diffused, t))
+        x_0, _ = model((cat(diffused[1], device(zero(x)), dims = 3), diffused[2]), t)
+        x_0 = sigmoid.(x_0)
+        x_0[:,:,:,rand(size(x_0, 4)) .< 0.5] .= 0  # nullify images with 50% probability
+        diffused = (cat(diffused[1], x_0, dims = 3), diffused[2])
         loss, grads = Flux.withgradient(model) do model
             x̂, ŷ = model(diffused, t)
-            reconst = mse(sigmoid.(x̂), x; agg = mean)
-            class = logitcrossentropy(ŷ, y; agg = mean)
+            reconst = mse(sigmoid.(x̂), x)
+            class = logitcrossentropy(ŷ, y)
             return reconst + λ * class
         end
         Optimisers.update!(state, model, grads[1])
@@ -73,6 +77,7 @@ for epoch in 1:n_epochs
     loss_train /= length(dataloader_train)
 
     loss_reconst = loss_class = 0.0
+    #=
     for (x, y) in dataloader_test
         diffused, t = diffuse(x, y)
         x, y, diffused, t = device((x, y, diffused, t))
@@ -82,6 +87,7 @@ for epoch in 1:n_epochs
     end
     loss_reconst /= length(dataloader_test)
     loss_class /= length(dataloader_test)
+    =#
     loss_test = loss_reconst + λ * loss_class
 
     if epoch % 50 == 0
