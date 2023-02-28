@@ -15,6 +15,13 @@ include("model.jl")
 n_epochs = 100
 batchsize = 512
 
+# relative weight of the classification loss relative to the reconstruction loss
+λ = 1
+
+# self-conditioned training
+self_conditioned = true
+
+
 # Data loading
 preprocess((x, y)) = reshape(x, 28, 28, 1, :), onehotbatch(y, 0:9)
 xtrain, ytrain = preprocess(MNIST(:train)[:])
@@ -23,7 +30,7 @@ dataloader_train = DataLoader((xtrain, ytrain); batchsize)
 dataloader_test = DataLoader((xtest, ytest); batchsize)
 
 # Model and optimizer setup
-model = UNet()
+model = UNet(1 + self_conditioned)
 optim = Adam(1f-3)
 state = Optimisers.setup(optim, model)
 
@@ -41,32 +48,36 @@ sampletime() = Float32(exp(rand(Uniform(log(t_min), log(t_max)))))
 
 # Diffuse a batch of images and labels up to random times
 function diffuse(x, y)
-    diffused = (similar(x), similar(y))
-    t = Float32[]
-    for i in axes(x, 4)
+    n = size(x, 4)
+    diffused = (x = similar(x), y = similar(y), t = zeros(Float32, n))
+    for i in 1:n
         time = sampletime()
-        diffused[1][:,:,:,i], diffused[2][:,i] =
+        diffused.t[i] = time
+        diffused.x[:,:,:,i], diffused.y[:,i] =
             sampleforward(process, time, (x[:,:,:,i], y[:,i]))
-        push!(t, time)
     end
-    return diffused, t
+    return diffused
 end
 
-# relative weight of the classification loss relative to the reconstruction loss
-λ = 1
+function f(model, diffused)
+    x = diffused.x
+    x_0, _ = model(cat(x, zero(x), dims = 3), diffused.y, diffused.t)
+    x_0 = sigmoid.(x_0)
+    x_0[:,:,:,rand(size(x_0, 4)) .< 0.5] .= 0  # nullify images with 50% probability
+    return (x = cat(x, x_0, dims = 3), y = diffused.y, t = diffused.t)
+end
 
 starttime = now()
 for epoch in 1:n_epochs
     loss_train = 0.0
     for (x, y) in dataloader_train
-        diffused, t = diffuse(x, y)
-        x, y, diffused, t = device((x, y, diffused, t))
-        x_0, _ = model((cat(diffused[1], device(zero(x)), dims = 3), diffused[2]), t)
-        x_0 = sigmoid.(x_0)
-        x_0[:,:,:,rand(size(x_0, 4)) .< 0.5] .= 0  # nullify images with 50% probability
-        diffused = (cat(diffused[1], x_0, dims = 3), diffused[2])
+        diffused = diffuse(x, y)
+        x, y, diffused = device((x, y, diffused))
+        if self_conditioned
+            diffused = f(model, diffused)
+        end
         loss, grads = Flux.withgradient(model) do model
-            x̂, ŷ = model(diffused, t)
+            x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
             reconst = mse(sigmoid.(x̂), x)
             class = logitcrossentropy(ŷ, y)
             return reconst + λ * class
@@ -77,17 +88,18 @@ for epoch in 1:n_epochs
     loss_train /= length(dataloader_train)
 
     loss_reconst = loss_class = 0.0
-    #=
     for (x, y) in dataloader_test
-        diffused, t = diffuse(x, y)
-        x, y, diffused, t = device((x, y, diffused, t))
-        x̂, ŷ = model(diffused, t)
-        loss_reconst += mse(sigmoid.(x̂), x; agg = mean)
-        loss_class += logitcrossentropy(ŷ, y; agg = mean)
+        diffused = diffuse(x, y)
+        x, y, diffused = device((x, y, diffused))
+        if self_conditioned
+            diffused = f(model, diffused)
+        end
+        x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
+        loss_reconst += mse(sigmoid.(x̂), x)
+        loss_class += logitcrossentropy(ŷ, y)
     end
     loss_reconst /= length(dataloader_test)
     loss_class /= length(dataloader_test)
-    =#
     loss_test = loss_reconst + λ * loss_class
 
     if epoch % 50 == 0

@@ -51,12 +51,12 @@ end
 """
 User Facing API for UNet architecture.
 """
-function UNet(channels=[32, 64, 128, 256], embed_dim=256, scale=30.0f0)
+function UNet(c, channels=[32, 64, 128, 256], embed_dim=256, scale=30.0f0)
     return UNet((
         gaussfourierproj=GaussianFourierProjection(embed_dim, scale),
         linear=Dense(embed_dim, embed_dim, swish),
         # Encoding
-        conv1=Conv((3, 3), 2 => channels[1], stride=1, pad=1, bias=false),
+        conv1=Conv((3, 3), c => channels[1], stride=1, pad=1, bias=false),
         dense1=Dense(embed_dim, channels[1]),
         gnorm1=GroupNorm(channels[1], 4, swish),
         conv2=Conv((3, 3), channels[1] => channels[2], stride=2, pad=1, bias=false),
@@ -98,7 +98,7 @@ expand_dims(x::AbstractVecOrMat, dims::Int=2) = reshape(x, (ntuple(i -> 1, dims)
 """
 Makes the UNet struct callable and shows an example of a "Functional" API for modeling in Flux. \n
 """
-function (unet::UNet)((x, y), t)
+function (unet::UNet)(x, y, t)
     # Embedding
     embed = unet.layers.gaussfourierproj(t)
     embed = unet.layers.linear(embed)
