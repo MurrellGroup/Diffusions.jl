@@ -16,7 +16,7 @@ n_epochs = 100
 batchsize = 512
 
 # relative weight of the classification loss relative to the reconstruction loss
-λ = 1
+λ = 0.01f0
 
 # self-conditioned training
 self_conditioned = true
