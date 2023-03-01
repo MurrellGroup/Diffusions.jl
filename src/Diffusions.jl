@@ -19,6 +19,7 @@ module Diffusions
     include("continuous.jl")
     include("discrete.jl")
     include("tractables.jl")
+    include("JC.jl")
     include("denoiser.jl")
     include("tracker.jl")
     include("interface.jl")
@@ -50,6 +51,7 @@ module Diffusions
         MultiGaussianState,
         #Discrete
         IJ,
+        DiscreteDiffusion,
         DiscreteState,
         #functions
         diffusion_sample,
