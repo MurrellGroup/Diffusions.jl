@@ -4,7 +4,7 @@ using Diffusions: OrnsteinUhlenbeck, IJ, sampleforward
 using Distributions: Uniform
 using Flux.Data: DataLoader
 using Flux.Losses: mse, logitcrossentropy
-using MLDatasets: MNIST
+using MLDatasets: MNIST, FashionMNIST
 using OneHotArrays: onehotbatch
 using Optimisers: Optimisers, WeightDecay, Adam
 using Printf: @printf, @sprintf
@@ -23,9 +23,16 @@ self_conditioned = true
 
 
 # Data loading
+if isempty(ARGS) || ARGS[1] == "MNIST"
+    dataset = MNIST
+elseif ARGS[1] == "FashionMNIST"
+    dataset = FashionMNIST
+else
+    error("the dataset name must be MNIST or FashionMNIST")
+end
 preprocess((x, y)) = reshape(x, 28, 28, 1, :), onehotbatch(y, 0:9)
-xtrain, ytrain = preprocess(MNIST(:train)[:])
-xtest, ytest = preprocess(MNIST(:test)[:])
+xtrain, ytrain = preprocess(dataset(:train)[:])
+xtest, ytest = preprocess(dataset(:test)[:])
 dataloader_train = DataLoader((xtrain, ytrain); batchsize)
 dataloader_test = DataLoader((xtest, ytest); batchsize)
 
