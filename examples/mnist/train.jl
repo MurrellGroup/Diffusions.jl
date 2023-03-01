@@ -23,9 +23,9 @@ self_conditioned = true
 
 
 # Data loading
-if isempty(ARGS) || ARGS[1] == "MNIST"
+if isempty(ARGS) || lowercase(ARGS[1]) == "mnist"
     dataset = MNIST
-elseif ARGS[1] == "FashionMNIST"
+elseif lowercase(ARGS[1]) == "fashionmnist"
     dataset = FashionMNIST
 else
     error("the dataset name must be MNIST or FashionMNIST")
@@ -110,7 +110,8 @@ for epoch in 1:n_epochs
     loss_test = loss_reconst + λ * loss_class
 
     if epoch % 50 == 0
-        let unet = cpu(model), name = @sprintf "mnist-unet-%03d.bson" epoch
+        let unet = cpu(model), name = @sprintf("%s-%03d.bson", lowercase(string(dataset)), epoch)
+            @info "Saving weights $(name)"
             @save name unet
         end
     end
