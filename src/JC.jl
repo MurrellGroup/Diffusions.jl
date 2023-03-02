@@ -1,16 +1,16 @@
-struct DiscreteDiffusion{T1 <: Real, T2 <: Integer} <: SimulationProcess
-    rate::T1
-    k::T2
+struct UniformDiscreteDiffusion{T <: Real} <: SimulationProcess
+    rate::T
+    k::Int
 end
 
-eq_dist(P::DiscreteDiffusion) = Categorical(P.k)
+eq_dist(P::UniformDiscreteDiffusion) = Categorical(P.k)
 
-function sampleforward(rng::AbstractRNG, P::DiscreteDiffusion{T1,T2}, t::Real, X0) where T1 where T2
+function sampleforward(rng::AbstractRNG, P::UniformDiscreteDiffusion, t::Real, X0)
     Xt = copy(X0)
     event = 1-exp(-t*P.rate)
     for i in eachindex(Xt)
         if rand(rng) < event
-            Xt[i] = rand(T2(1):P.k)
+            Xt[i] = rand(1:P.k)
         end
     end
     return Xt
@@ -19,7 +19,7 @@ end
 #pls check for correctness, and make sure types are preserved
 #This works by pre-calculating the five possible outcomes of the combine(fwd(X0),back(Xt)) of JC69
 #Then only sampling when the random draw suggests the state will differ from Xt.
-function endpoint_conditioned_sample(rng::AbstractRNG, P::DiscreteDiffusion{T1,T2}, s::Real, t::Real, X0, Xt) where T1 where T2
+function endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0, Xt)
     Xs = copy(Xt)
     k = P.k
     Fw = 1-exp(-s*P.rate)
@@ -37,13 +37,13 @@ function endpoint_conditioned_sample(rng::AbstractRNG, P::DiscreteDiffusion{T1,T
         if X0[i] == Xt[i]
             if rand(rng) < E
                 #Draw from 1:k but excluding Xt[i]
-                d = rand(rng,T2(1):(k-1))
+                d = rand(rng,1:(k-1))
                 Xs[i] = d>=X0[i] ? d+1 : d
             end
         else
             if rand(rng) < C
                 #Draw from 1:k but excluding Xt[i] and X0[i]
-                d = rand(rng,T2(1):(k-2))
+                d = rand(rng,1:(k-2))
                 if d>=X0[i]
                     d += 1
                 end

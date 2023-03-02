@@ -51,7 +51,7 @@ module Diffusions
         MultiGaussianState,
         #Discrete
         IJ,
-        DiscreteDiffusion,
+        UniformDiscreteDiffusion,
         DiscreteState,
         #functions
         diffusion_sample,
