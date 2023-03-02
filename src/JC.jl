@@ -10,7 +10,7 @@ function sampleforward(rng::AbstractRNG, P::UniformDiscreteDiffusion, t::Real, X
     event = 1-exp(-t*P.rate)
     for i in eachindex(Xt)
         if rand(rng) < event
-            Xt[i] = rand(1:P.k)
+            Xt[i] = rand(rng, 1:P.k)
         end
     end
     return Xt
