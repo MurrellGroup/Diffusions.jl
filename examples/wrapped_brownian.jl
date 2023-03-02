@@ -34,10 +34,8 @@ end
 
 expectation(x_t, t; P = P, target = (mus, sigs, weights)) = [expec(x, t, P, target) for x in x_t]
 
-rewrap(x, lb, ub) = mod(x - lb, ub - lb) + lb
-
 function wrapped_normal_pdf(mu, sig, x)
-    mu = rewrap(mu, -pi, pi)
+    mu = mod2pi(mu + pi) - pi
     d = Normal(mu, sig)
     return sum(pdf.(d, (-20*2pi+x):2pi:(20*2pi+x)))
 end

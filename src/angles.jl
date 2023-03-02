@@ -4,8 +4,7 @@ end
 
 eq_dist(::WrappedBrownianMotion) = Uniform(-pi, pi)
 
-rewrap(x, lb, ub) = mod(x - lb, ub - lb) + lb
-reangle(x) = rewrap(x, oftype(x, -pi), oftype(x, pi))
+reangle(x) = mod2pi(x + pi) - pi
 
 # See https://github.com/MurrellGroup/Diffusions.jl/issues/11
 # This could be optimized to truncate based on the forward mu and var
