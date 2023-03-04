@@ -21,7 +21,6 @@ batchsize = 512
 # self-conditioned training
 self_conditioned = true
 
-
 # Data loading
 if isempty(ARGS) || lowercase(ARGS[1]) == "mnist"
     dataset = MNIST
