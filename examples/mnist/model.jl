@@ -54,6 +54,7 @@ User Facing API for UNet architecture.
 function UNet(c, channels=[32, 64, 128, 256], embed_dim=256, scale=30.0f0)
     return UNet((
         gaussfourierproj=GaussianFourierProjection(embed_dim, scale),
+        labelproj = Dense(10, embed_dim),
         linear=Dense(embed_dim, embed_dim, swish),
         # Encoding
         conv1=Conv((3, 3), c => channels[1], stride=1, pad=1, bias=false),
@@ -100,8 +101,7 @@ Makes the UNet struct callable and shows an example of a "Functional" API for mo
 """
 function (unet::UNet)(x, y, t)
     # Embedding
-    embed = unet.layers.gaussfourierproj(t)
-    embed = unet.layers.linear(embed)
+    embed = unet.layers.linear(unet.layers.gaussfourierproj(t) .+ unet.layers.labelproj(y))
     # Encoder
     h1 = unet.layers.conv1(x)
     h1 = h1 .+ expand_dims(unet.layers.dense1(embed), 2)

@@ -47,10 +47,12 @@ state = device(state)
 
 # Diffusion scheduling
 p = ones(Float32, 10) ./ 10  # equilibrium distribution
-process = (OrnsteinUhlenbeck(0, 1, 0.5f0), IJ(2.0f0, p))
+θ = 4.0f0  # reversion
+σ = √(2θ)  # volatility
+process = (OrnsteinUhlenbeck(0, σ, θ), IJ(0.5f0, p))
 
 t_min = 1f-4
-t_max = 5.0f0
+t_max = 1f+1
 sampletime() = Float32(exp(rand(Uniform(log(t_min), log(t_max)))))
 
 # Diffuse a batch of images and labels up to random times
