@@ -42,3 +42,11 @@ function randcat(rng::AbstractRNG, p::AbstractArray)
     K = size(p, 1)
     return onehotbatch(randcatcold(rng, p), 1:K)
 end
+
+function sqrt_schedule(lb,ub,steps; T = Float32)
+    T.([sqrt(lb):(sqrt(ub)-sqrt(lb))/steps:sqrt(ub);].^2)
+end
+
+function log_schedule(lb,ub,steps; T = Float32)
+    T.(exp.([log(lb):(log(ub)-log(lb))/steps:log(ub);]))
+end
