@@ -15,7 +15,7 @@ function forward(process::OrnsteinUhlenbeck, x_s::AbstractArray, s::Real, t::Rea
     μ, σ, θ = process.mean, process.volatility, process.reversion
     mean = @. exp(-(t - s) * θ) * (x_s - μ) + μ
     var = similar(mean)
-    var .= (1 - exp(-2(t - s) * θ) * σ^2) / 2θ
+    var .= ((1 - exp(-2(t - s) * θ)) * σ^2) / 2θ
     return GaussianVariables(mean, var)
 end
 
