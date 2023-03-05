@@ -14,13 +14,15 @@ eq_dist(model::OrnsteinUhlenbeck) = Normal(model.mean,var(model))
 function forward(process::OrnsteinUhlenbeck, x_s::AbstractArray, s::Real, t::Real)
     μ, σ, θ = process.mean, process.volatility, process.reversion
     mean = @. exp(-(t - s) * θ) * (x_s - μ) + μ
-    var = @. (1 - exp(-2(t - s) * θ) * σ^2) / 2θ
+    var = similar(mean)
+    var .= (1 - exp(-2(t - s) * θ) * σ^2) / 2θ
     return GaussianVariables(mean, var)
 end
 
 function backward(process::OrnsteinUhlenbeck, x_t::AbstractArray, s::Real, t::Real)
     μ, σ, θ = process.mean, process.volatility, process.reversion
     mean = @. exp((t - s) * θ) * (x_t - μ) + μ
-    var = @. -(σ^2 / 2θ) + (σ^2 * exp(2(t - s) * θ)) / 2θ
+    var = similar(mean)
+    var .= -(σ^2 / 2θ) + (σ^2 * exp(2(t - s) * θ)) / 2θ
     return (μ = mean, σ² = var)
 end
