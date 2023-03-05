@@ -1,7 +1,6 @@
 export
     RotDiffusionProcess,
-    MultiRotationState,
-    features
+    MultiRotationState
 
 function randrot(rng::AbstractRNG, σ²::Real)
     σ = √float(σ²)
@@ -71,10 +70,10 @@ values(r::MultiRotationState) = copy(r.rots)
 #In case you want to use the quats as inputs to a NN
 flatquat(q::Quaternion) = [q.s, q.v1, q.v2, q.v3]
 
-function features(r::MultiRotationState)
-    feats = zeros(4,size(r.rots)...)
-    for ix in CartesianIndices(r.rots)
-        feats[:,ix] .= flatquat(r.rots[ix].q)
+function rotation_features(r::Array{QuatRotation})
+    feats = zeros(4,size(r)...)
+    for ix in CartesianIndices(r)
+        feats[:,ix] .= flatquat(r[ix].q)
     end
     return feats
 end
