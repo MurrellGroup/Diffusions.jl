@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OneHotArrays = "0b1bfda6-eb8a-41d2-88d8-f5af5cad476f"
 Quaternions = "94ee1d12-ae83-5a48-8b1c-48b8ff168ae0"

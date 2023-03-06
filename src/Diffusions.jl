@@ -13,6 +13,7 @@ module Diffusions
     using Random: Random, AbstractRNG
     using Rotations
     using Quaternions
+    using Functors: @functor
 
     include("types.jl")
     include("randomvariable.jl")
@@ -24,6 +25,7 @@ module Diffusions
     include("denoiser.jl")
     include("tracker.jl")
     include("utils.jl")
+    include("randomfourierfeatures.jl")
     include("interface.jl")
 
     export
@@ -41,6 +43,7 @@ module Diffusions
         rotation_features,
         #utils
         GaussianFourierProjection,
+        RandomFourierFeatures,
         sqrt_schedule,
         log_schedule
 
