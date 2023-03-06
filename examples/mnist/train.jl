@@ -1,6 +1,6 @@
 using BSON: @save
 using Dates: Dates, now
-using Diffusions: OrnsteinUhlenbeck, IJ, sampleforward
+using Diffusions
 using Distributions: Uniform
 using Flux.Data: DataLoader
 using Flux.Losses: mse, logitcrossentropy
@@ -48,7 +48,7 @@ state = device(state)
 p = ones(Float32, 10) ./ 10  # equilibrium distribution
 θ = 4.0f0  # reversion
 σ = √(2θ)  # volatility
-process = (OrnsteinUhlenbeck(0, σ, θ), IJ(0.5f0, p))
+diffusion = (OrnsteinUhlenbeckDiffusion(0, σ, θ), IndependentDiscreteDiffusion(0.5f0, p))
 
 t_min = 1f-4
 t_max = 1f+1
@@ -62,7 +62,7 @@ function diffuse(x, y)
         time = sampletime()
         diffused.t[i] = time
         diffused.x[:,:,:,i], diffused.y[:,i] =
-            sampleforward(process, time, (x[:,:,:,i], y[:,i]))
+            sampleforward(diffusion, time, (x[:,:,:,i], y[:,i]))
     end
     return diffused
 end
