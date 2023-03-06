@@ -8,9 +8,6 @@ function randrot(rng::AbstractRNG, σ²::Real)
     return QuatRotation(exp(quat(0, randn(rng, T) * σ, randn(rng, T) * σ, randn(rng, T) * σ)))
 end
 
-# This can be removed if this PR is merged: https://github.com/JuliaGeometry/Rotations.jl/pull/252
-slerp(qa::QuatRotation, qb::QuatRotation, t::Real) = QuatRotation(Quaternions.slerp(qa.q, qb.q, t))
-
 #T is in units of var
 function rotation_diffuse(rng::AbstractRNG, Rstart::QuatRotation, T::Real; max_var_step::Real = oftype(T, 0.05))
     remaining_var = T
