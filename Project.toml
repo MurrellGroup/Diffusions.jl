@@ -12,5 +12,8 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
 
 [compat]
+Distributions = "0.25"
+OneHotArrays = "0.2"
+Quaternions = "0.7"
 Rotations = "1.4"
 julia = "1.8"
