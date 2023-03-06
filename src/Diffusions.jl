@@ -42,7 +42,6 @@ module Diffusions
         randcat,
         rotation_features,
         #utils
-        GaussianFourierProjection,
         RandomFourierFeatures,
         sqrt_schedule,
         log_schedule

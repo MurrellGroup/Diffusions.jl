@@ -1,19 +1,3 @@
-#Stolen from https://github.com/FluxML/model-zoo/blob/master/vision/diffusion_mnist/diffusion_mnist.jl
-"""
-    GaussianFourierProjection(embed_dim, scale)
-
-Returns a function that projects to a vector of length `embed_dim` using a random Fourier feature projection with Gaussian kernel and bandwidth `scale`.
-"""
-function GaussianFourierProjection(embed_dim, scale)
-    # Instantiate W once
-    W = randn(Float32, embed_dim ÷ 2) .* scale
-    # Return a function that always references the same W
-    function GaussFourierProject(t)
-        t_proj = t' .* W * Float32(2π)
-        [sin.(t_proj); cos.(t_proj)]
-    end
-end
-
 # Random sampling from categorical distributions
 randcatcold(p::AbstractArray) = randcatcold(Random.default_rng(), p)
 
