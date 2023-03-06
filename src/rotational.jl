@@ -67,13 +67,14 @@ endpoint_conditioned_sample(rng::AbstractRNG, process::RotDiffusionProcess, s::R
 
 values(r::MultiRotationState) = copy(r.rots)
 
-#In case you want to use the quats as inputs to a NN
-flatquat(q::Quaternion) = [q.s, q.v1, q.v2, q.v3]
-
-function rotation_features(r::Array{QuatRotation})
-    feats = zeros(4,size(r)...)
+function rotation_features(r::AbstractArray{QuatRotation{T}}) where T
+    feats = zeros(T, 4, size(r)...)
     for ix in CartesianIndices(r)
-        feats[:,ix] .= flatquat(r[ix].q)
+        q = r[ix].q
+        feats[1,ix] = q.s
+        feats[2,ix] = q.v1
+        feats[3,ix] = q.v2
+        feats[4,ix] = q.v3
     end
     return feats
 end
