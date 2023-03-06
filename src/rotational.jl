@@ -38,27 +38,11 @@ end
 
 RotDiffusionProcess() = RotDiffusionProcess(1.0)
 
-
-mutable struct MultiRotationState <: ContinuousState
-    rots::Array{QuatRotation}
-    function MultiRotationState(dims...)
-        new(ones(QuatRotation,dims...))
-    end
-end
-
-function forward_sample!(end_state,init_state,P::RotDiffusionProcess,T)
-    for ix in CartesianIndices(init_state.rots)
-        end_state.rots[ix] = rotation_diffuse(rng, init_state.rots[ix], T*P.rate)
-    end
-end
-
 sampleforward(rng::AbstractRNG, process::RotDiffusionProcess, t::Real, x) =
     rotation_diffuse.(rng, x, t * process.rate)
 
 endpoint_conditioned_sample(rng::AbstractRNG, process::RotDiffusionProcess, s::Real, t::Real, x_0, x_t) =
     rotation_bridge.(rng, x_0, x_t, (t - s) * process.rate, t * process.rate)
-
-values(r::MultiRotationState) = copy(r.rots)
 
 function rotation_features(r::AbstractArray{QuatRotation{T}}) where T
     feats = zeros(T, 4, size(r)...)
