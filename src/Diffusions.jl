@@ -38,7 +38,6 @@ module Diffusions
         eq_dist,
         sampleforward,
         samplebackward,
-        randcatcold,
         randcat,
         rotation_features,
         #utils

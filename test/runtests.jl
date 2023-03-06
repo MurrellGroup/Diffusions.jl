@@ -1,4 +1,5 @@
 using Diffusions
+using Random
 using Test
 
 @testset "Diffusions.jl" begin
@@ -33,4 +34,25 @@ end
         @test size(rff(T[1.0, 2.0]))      == (d, 2)
         @test size(rff(T[1.0, 2.0, 3.0])) == (d, 3)
     end
+end
+
+@testset "Random categorical" begin
+    rng = Xoshiro(12345)
+    p = [
+        0.1 0.3
+        0.2 0.5
+        0.7 0.2
+    ]
+    x = randcat(rng, p)
+    @test size(x) == (2,)
+    @test x isa Vector{Int}
+
+    # test a point to avoid stupid bugs
+    N = 1_000_000
+    n = 0
+    for _ in 1:N
+        x = randcat(rng, p)
+        n += x[1] == 1
+    end
+    @test 0.099 < n / N < 0.101
 end
