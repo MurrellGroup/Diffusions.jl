@@ -1,20 +1,20 @@
 #This is basically F81, but with arb state size and linear prop ops
-#IJ = "Independent Jumps", as in every time a mutation event happens, you jump to a new state independent of the current state.
-struct IJ{T <: Real} <: DiscreteStateProcess
+#IndependentDiscreteDiffusion = "Independent Jumps", as in every time a mutation event happens, you jump to a new state independent of the current state.
+struct IndependentDiscreteDiffusion{T <: Real} <: DiscreteStateProcess
     r::T
     π::Vector{T}
     β::T
 
-    function IJ(r::T, π::AbstractVector{<: T}) where T <: Real
+    function IndependentDiscreteDiffusion(r::T, π::AbstractVector{<: T}) where T <: Real
         π = π ./ sum(π)
         β = inv(1 - sum(abs2, π))
         return new{T}(r, π, β)
     end
 end
 
-eq_dist(model::IJ) = Categorical(model.pi)
+eq_dist(model::IndependentDiscreteDiffusion) = Categorical(model.π)
 
-function forward(process::IJ, x_s::AbstractArray, s::Real, t::Real)
+function forward(process::IndependentDiscreteDiffusion, x_s::AbstractArray, s::Real, t::Real)
     (;r, π, β) = process
     pow = exp(-β * r * (t - s))
     c1 = (1 - pow) .* π
@@ -22,7 +22,7 @@ function forward(process::IJ, x_s::AbstractArray, s::Real, t::Real)
     return CategoricalVariables(@. c1 * (1 - x_s) + c2 * x_s)
 end
 
-function backward(process::IJ, x_t::AbstractArray, s::Real, t::Real)
+function backward(process::IndependentDiscreteDiffusion, x_t::AbstractArray, s::Real, t::Real)
     (;r, π, β) = process
     pow = exp(-β * r * (t - s))
     c1 = (1 - pow) .* π

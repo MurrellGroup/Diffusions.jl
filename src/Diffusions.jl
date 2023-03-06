@@ -23,13 +23,13 @@ module Diffusions
 
     export
         #Processes
-        OrnsteinUhlenbeck,
+        OrnsteinUhlenbeckDiffusion,
         MultiGaussianState,
-        WrappedBrownianMotion,
-        WrappedInterpolatedBrownianMotion,
-        IJ,
+        WrappedBrownianDiffusion,
+        WrappedInterpolatedBrownianDiffusion,
+        IndependentDiscreteDiffusion,
         UniformDiscreteDiffusion,
-        RotDiffusionProcess,
+        RotationDiffusion,
         #Diffusion functions
         sampleforward,
         samplebackward,

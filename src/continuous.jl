@@ -1,17 +1,17 @@
 #OU process
-struct OrnsteinUhlenbeck{T <: Real} <: GaussianStateProcess
+struct OrnsteinUhlenbeckDiffusion{T <: Real} <: GaussianStateProcess
     mean::T
     volatility::T
     reversion::T
 end
 
-OrnsteinUhlenbeck(mean::Real, volatility::Real, reversion::Real) = OrnsteinUhlenbeck(float.(promote(mean, volatility, reversion))...)
+OrnsteinUhlenbeckDiffusion(mean::Real, volatility::Real, reversion::Real) = OrnsteinUhlenbeckDiffusion(float.(promote(mean, volatility, reversion))...)
 
-var(model::OrnsteinUhlenbeck) = (model.volatility^2) / (2 * model.reversion)
+var(model::OrnsteinUhlenbeckDiffusion) = (model.volatility^2) / (2 * model.reversion)
 
-eq_dist(model::OrnsteinUhlenbeck) = Normal(model.mean,var(model))
+eq_dist(model::OrnsteinUhlenbeckDiffusion) = Normal(model.mean,var(model))
 
-function forward(process::OrnsteinUhlenbeck, x_s::AbstractArray, s::Real, t::Real)
+function forward(process::OrnsteinUhlenbeckDiffusion, x_s::AbstractArray, s::Real, t::Real)
     μ, σ, θ = process.mean, process.volatility, process.reversion
     mean = @. exp(-(t - s) * θ) * (x_s - μ) + μ
     var = similar(mean)
@@ -19,7 +19,7 @@ function forward(process::OrnsteinUhlenbeck, x_s::AbstractArray, s::Real, t::Rea
     return GaussianVariables(mean, var)
 end
 
-function backward(process::OrnsteinUhlenbeck, x_t::AbstractArray, s::Real, t::Real)
+function backward(process::OrnsteinUhlenbeckDiffusion, x_t::AbstractArray, s::Real, t::Real)
     μ, σ, θ = process.mean, process.volatility, process.reversion
     mean = @. exp((t - s) * θ) * (x_t - μ) + μ
     var = similar(mean)
