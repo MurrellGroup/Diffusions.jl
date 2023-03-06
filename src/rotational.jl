@@ -32,16 +32,16 @@ function rotation_bridge(
 end
 
 
-struct RotDiffusionProcess{T <: Real} <: SimulationProcess
+struct RotationDiffusion{T <: Real} <: SimulationProcess
     rate::T
 end
 
-RotDiffusionProcess() = RotDiffusionProcess(1.0)
+RotationDiffusion() = RotationDiffusion(1.0)
 
-sampleforward(rng::AbstractRNG, process::RotDiffusionProcess, t::Real, x) =
+sampleforward(rng::AbstractRNG, process::RotationDiffusion, t::Real, x) =
     rotation_diffuse.(rng, x, t * process.rate)
 
-endpoint_conditioned_sample(rng::AbstractRNG, process::RotDiffusionProcess, s::Real, t::Real, x_0, x_t) =
+endpoint_conditioned_sample(rng::AbstractRNG, process::RotationDiffusion, s::Real, t::Real, x_0, x_t) =
     rotation_bridge.(rng, x_0, x_t, (t - s) * process.rate, t * process.rate)
 
 function rotation_features(r::AbstractArray{QuatRotation{T}}) where T

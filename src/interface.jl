@@ -4,7 +4,7 @@
 Draw samples forward (i.e., diffuse).
 
 # Arguments
-- `process`: a diffusion process (e.g., an `OrnsteinUhlenbeck` process)
+- `process`: a diffusion process (e.g., an `OrnsteinUhlenbeckDiffusion` process)
 - `t`: a taregt time
 - `x`: data points at time 0
 """
@@ -21,7 +21,7 @@ Draw samples backward (i.e., denoise).
 
 # Arguments
 - `guess`: a callable object; `guess(X_t, t)` returns the guess (e.g., expectation) of X_0 given X_t at time t
-- `process`: a diffusion process (e.g., an `OrnsteinUhlenbeck` process)
+- `process`: a diffusion process (e.g., an `OrnsteinUhlenbeckDiffusion` process)
 - `timesteps`: a vector of positive times (e.g., `5.0 * (1 - 0.05).^(100:-1:0)`)
 - `x`: data points at time `timesteps[end]` (e.g., samples from the equilibrium distribution)
 """
