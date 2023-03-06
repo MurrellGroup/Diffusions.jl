@@ -1,5 +1,3 @@
-Base.broadcastable(x::Process) = Ref(x)
-
 abstract type WrappedDiffusion{T <: Real} <: SimulationProcess end
 
 struct WrappedBrownianMotion{T <: Real} <: WrappedDiffusion{T}
