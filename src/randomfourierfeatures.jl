@@ -19,7 +19,7 @@ function RandomFourierFeatures(d::Integer, σ::AbstractFloat)
     return RandomFourierFeatures(randn(typeof(σ), d ÷ 2) * σ)
 end
 
-function (rff::RandomFourierFeatures{T})(t::AbstractVector) where T
+function (rff::RandomFourierFeatures{T})(t::Union{T, AbstractVector{T}}) where T <: Real
     wt = T(2π) .* rff.w .* t'
     return [cos.(wt); sin.(wt)]
 end
