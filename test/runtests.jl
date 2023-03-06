@@ -29,6 +29,7 @@ end
     for T in [Float32, Float64]
         d = 128
         rff = RandomFourierFeatures(d, T(1.0))
+        @test rff(T[1.0]) isa Matrix{T}
         @test size(rff(T[1.0, 2.0]))      == (d, 2)
         @test size(rff(T[1.0, 2.0, 3.0])) == (d, 3)
     end
