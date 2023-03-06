@@ -19,6 +19,8 @@ function RandomFourierFeatures(d::Integer, σ::AbstractFloat)
     return RandomFourierFeatures(randn(typeof(σ), d ÷ 2) * σ)
 end
 
+(rff::RandomFourierFeatures{T})(t::Union{Real, AbstractVector{<: Real}}) where T = rff(convert.(T, t))
+
 function (rff::RandomFourierFeatures{T})(t::Union{T, AbstractVector{T}}) where T <: Real
     wt = T(2π) .* rff.w .* t'
     return [cos.(wt); sin.(wt)]

@@ -30,11 +30,23 @@ end
     for T in [Float32, Float64]
         d = 128
         rff = RandomFourierFeatures(d, T(1.0))
+        @test rff(T(1.0)) isa Vector{T}
         @test rff(T[1.0]) isa Matrix{T}
         @test size(rff(T(1.0))) == (d,)
-        @test size(rff(T[1.0, 2.0]))      == (d, 2)
+        @test size(rff(T[1.0, 2.0])) == (d, 2)
         @test size(rff(T[1.0, 2.0, 3.0])) == (d, 3)
     end
+
+    # mixed types
+    rff = RandomFourierFeatures(128, 1.0)
+    @test rff isa RandomFourierFeatures{Float64}
+    @test rff(1.0f0) isa Vector{Float64}
+    @test rff([1.0f0]) isa Matrix{Float64}
+
+    rff = RandomFourierFeatures(128, 1.0f0)
+    @test rff isa RandomFourierFeatures{Float32}
+    @test rff(1.0) isa Vector{Float32}
+    @test rff([1.0]) isa Matrix{Float32}
 end
 
 @testset "Random categorical" begin
