@@ -2,8 +2,6 @@ struct RandomFourierFeatures{T <: Real, A <: AbstractVector{T}}
     w::A
 end
 
-@functor RandomFourierFeatures
-
 """
     RandomFourierFeatures(d::Integer, σ::Real)
 

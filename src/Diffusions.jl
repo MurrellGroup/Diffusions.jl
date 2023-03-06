@@ -6,7 +6,6 @@ module Diffusions
     using Random: Random, AbstractRNG
     using Rotations
     using Quaternions
-    using Functors: @functor
 
     include("types.jl")
     include("randomvariable.jl")
