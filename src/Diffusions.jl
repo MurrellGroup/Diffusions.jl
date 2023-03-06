@@ -1,7 +1,6 @@
 module Diffusions
     using Distributions
     using LinearAlgebra
-    using StatsBase
     using OneHotArrays: onehotbatch
     using Random: Random, AbstractRNG
     using Rotations
