@@ -43,10 +43,8 @@ function randcat(rng::AbstractRNG, p::AbstractArray)
     return onehotbatch(randcatcold(rng, p), 1:K)
 end
 
-function sqrt_schedule(lb,ub,steps; T = Float32)
-    T.([sqrt(lb):(sqrt(ub)-sqrt(lb))/steps:sqrt(ub);].^2)
-end
+sqrt_schedule(lb::T, ub::T, length::Integer) where T <: Real = range(√lb, √ub; length) .^ 2
+sqrt_schedule(lb::Real, ub::Real, length::Integer) = sqrt_schedule(promote(lb, ub)..., length)
 
-function log_schedule(lb,ub,steps; T = Float32)
-    T.(exp.([log(lb):(log(ub)-log(lb))/steps:log(ub);]))
-end
+log_schedule(lb::T, ub::T, length::Integer) where T <: Real = exp.(range(log(lb), log(ub); length))
+log_schedule(lb::Real, ub::Real, length::Integer) = log_schedule(promote(lb, ub)..., length)
