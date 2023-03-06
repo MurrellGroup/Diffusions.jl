@@ -27,7 +27,7 @@ ncategories(X::CategoricalVariables) = size(X.p, 1)
 
 Base.size(X::CategoricalVariables) = Base.tail(size(X.p))
 
-sample(rng::AbstractRNG, X::CategoricalVariables) = randcat(rng, X.p)
+sample(rng::AbstractRNG, X::CategoricalVariables) = onehotbatch(randcat(rng, X.p),1:size(X.p,1))
 
 function combine(X::CategoricalVariables, lik)
     p = copy(X.p) .* lik
