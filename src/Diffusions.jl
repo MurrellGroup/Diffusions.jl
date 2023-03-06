@@ -50,6 +50,7 @@ module Diffusions
         OrnsteinUhlenbeck,
         MultiGaussianState,
         WrappedBrownianMotion,
+        WrappedInterpolatedBrownianMotion,
         #Discrete
         IJ,
         DiscreteState,
