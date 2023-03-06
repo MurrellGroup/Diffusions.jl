@@ -1,7 +1,3 @@
-export
-    RotDiffusionProcess,
-    MultiRotationState
-
 function randrot(rng::AbstractRNG, σ²::Real)
     σ = √float(σ²)
     T = typeof(σ)
