@@ -12,7 +12,7 @@ using Statistics: mean
 
 include("model.jl")
 
-n_epochs = 100
+n_epochs = 500
 batchsize = 512
 
 # relative weight of the classification loss relative to the reconstruction loss
