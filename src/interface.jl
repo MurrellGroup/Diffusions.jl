@@ -13,6 +13,7 @@ sampleforward(process, t, x) = sampleforward(Random.default_rng(), process, t, x
 sampleforward(rng::AbstractRNG, process, t::Real, x) = sampleforward.(rng, process, t, x)
 sampleforward(rng::AbstractRNG, process::Process, t::Real, x) = sample(rng, forward(process, x, 0, t))
 
+
 """
     samplebackward(guess, process, timesteps, x)
 
@@ -52,6 +53,8 @@ end
 
 endpoint_conditioned_sample(rng::AbstractRNG, process, s::Real, t::Real, x_0, x_t) =
     endpoint_conditioned_sample.(rng, process, s, t, x_0, x_t)
+
+endpoint_conditioned_sample(P::Process, s::Real, t::Real, x_0, x_t) = endpoint_conditioned_sample(Random.default_rng(), P, s, t, x_0, x_t)
 
 function checktimesteps(timesteps)
     length(timesteps) ≥ 2 || throw(ArgumentError("timesteps must have at least two timesteps"))
