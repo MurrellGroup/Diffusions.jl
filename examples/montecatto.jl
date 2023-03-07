@@ -37,7 +37,7 @@ P = OrnsteinUhlenbeckDiffusion(0.0)
 x_T = rand(eq_dist(P),(2,400))
 
 #Diffusion schedule
-timesteps = log_schedule(0.00001,15.0,200)
+timesteps = timeschedule(exp, 0.00001, 15.0, 200)
 
 #To track the diffusion trajectory
 track = Diffusions.Tracker()
