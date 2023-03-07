@@ -32,12 +32,12 @@ function samplebackward(rng::AbstractRNG, guess, process, timesteps, x; tracker 
     checktimesteps(timesteps)
     i = lastindex(timesteps)
     t = timesteps[i]
-    track!(tracker, t, x)
+    #track!(tracker, t, x, x_0)
     while i > firstindex(timesteps)
         s = timesteps[i-1]
         x_0 = guess(x, t)
         x = endpoint_conditioned_sample(rng, process, s, t, x_0, x)
-        track!(tracker, s, x)
+        track!(tracker, s, x, x_0)
         t = s
         i -= 1
     end
