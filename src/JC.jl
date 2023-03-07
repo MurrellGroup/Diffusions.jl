@@ -1,4 +1,4 @@
-struct UniformDiscreteDiffusion{T <: Real} <: SimulationProcess
+struct UniformDiscreteDiffusion{T <: Real} <: SamplingProcess
     rate::T
     k::Int
 end

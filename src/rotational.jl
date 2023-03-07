@@ -32,7 +32,7 @@ function rotation_bridge(
 end
 
 
-struct RotationDiffusion{T <: Real} <: SimulationProcess
+struct RotationDiffusion{T <: Real} <: SamplingProcess
     rate::T
 end
 

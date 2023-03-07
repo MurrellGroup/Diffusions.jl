@@ -5,14 +5,23 @@ Draw samples forward (i.e., diffuse).
 
 # Arguments
 - `process`: a diffusion process (e.g., an `OrnsteinUhlenbeckDiffusion` process)
-- `t`: a taregt time
+- `t`: a target time, or a vector of target times matching the batch (ie. last) dim of x
 - `x`: data points at time 0
 """
 sampleforward(process, t, x) = sampleforward(Random.default_rng(), process, t, x)
 
-sampleforward(rng::AbstractRNG, process, t::Real, x) = sampleforward.(rng, process, t, x)
-sampleforward(rng::AbstractRNG, process::Process, t::Real, x) = sample(rng, forward(process, x, 0, t))
+sampleforward(rng::AbstractRNG, process, t::Union{Real, AbstractVector{<: Real}}, x) = sampleforward.(rng, process, (t,), x)
+sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x) = sample(rng, forward(process, x, 0, t))
 
+function sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x)
+    x_t = similar(x)
+    d = ndims(x)
+    for i in axes(x, d)
+        x_t_i = selectdim(x_t, d, i)
+        x_t_i .= sampleforward(rng, process, t[i], selectdim(x, d, i))
+    end
+    return x_t
+end
 
 """
     samplebackward(guess, process, timesteps, x)
