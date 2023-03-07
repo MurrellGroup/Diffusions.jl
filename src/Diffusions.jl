@@ -5,6 +5,7 @@ module Diffusions
     using Random: Random, AbstractRNG
     using Rotations
     using Quaternions
+    using InverseFunctions: inverse, square
 
     include("types.jl")
     include("randomvariable.jl")
@@ -35,8 +36,8 @@ module Diffusions
         randcat,
         rotation_features,
         RandomFourierFeatures,
-        sqrt_schedule,
-        log_schedule,
+        timeschedule,
+        square,
         reangle
 
 end

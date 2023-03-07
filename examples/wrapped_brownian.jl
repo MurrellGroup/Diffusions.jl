@@ -46,7 +46,7 @@ ps = sum([weights[i] .* wrapped_normal_pdf.(mus[i], sigs[i], -pi:pi/240:pi) for 
 
 P = WrappedBrownianDiffusion(1.0)
 x_T = rand(eq_dist(P), 20000)
-timesteps = log_schedule(0.0001,20.0,200)
+timesteps = timeschedule(exp, 0.0001, 20.0, 200)
 @time samp = samplebackward(expectation, P, timesteps, x_T)
 
 #We can see that the target is not perfectly matched for the circular expectation!
