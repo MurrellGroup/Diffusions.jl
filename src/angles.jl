@@ -1,4 +1,4 @@
-abstract type WrappedDiffusion{T <: Real} <: SimulationProcess end
+abstract type WrappedDiffusion{T <: Real} <: SamplingProcess end
 
 struct WrappedBrownianDiffusion{T <: Real} <: WrappedDiffusion{T}
     rate::T
