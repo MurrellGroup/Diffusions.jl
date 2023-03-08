@@ -5,6 +5,18 @@ struct IndependentDiscreteDiffusion{T <: Real} <: DiscreteStateProcess
     π::Vector{T}
 end
 
+"""
+    IndependentDiscreteDiffusion(r::Real, π::AbstractVector{<: Real})
+
+Create a discrete diffusion process with independent jumps.
+
+The new state after a state transition is independent of the current state.  The
+transition probability matrix at time t is
+
+    P(t) = exp(r Q t),
+
+where Q is a rate matrix with equilibrium distribution π.
+"""
 function IndependentDiscreteDiffusion(r::Real, π::AbstractVector{<: Real})
     return IndependentDiscreteDiffusion(float(r), π ./ sum(π))
 end
