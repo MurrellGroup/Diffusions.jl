@@ -12,9 +12,9 @@ OrnsteinUhlenbeckDiffusion(mean::Real, volatility::Real, reversion::Real) = Orns
 
 Create an Ornstein-Uhlenbeck diffusion.
 
-The process is defined by the following stochastic differential equation:
+The process (X_t) is defined by the following stochastic differential equation:
 
-    dx_t = -θ (μ - x_t) dt + σ dW_t,
+    dX_t = -θ (μ - X_t) dt + σ dW_t,
 
 where W_t denotes the Wiener process.
 
