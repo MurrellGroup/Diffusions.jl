@@ -2,8 +2,45 @@ using Diffusions
 using Random
 using Test
 
-@testset "Diffusions.jl" begin
-    # Write your tests here.
+@testset "Diffusion" begin
+    diffusion = OrnsteinUhlenbeckDiffusion(0.0)
+
+    # 2d diffusion
+    x_0 = randn(2)
+    x_t = sampleforward(diffusion, 1.0, x_0)
+    @test x_t isa typeof(x_0)
+    @test size(x_t) == size(x_0)
+
+    # 2x3 diffusion
+    x_0 = randn(2, 3)
+    x_t = sampleforward(diffusion, 1.0, x_0)
+    @test x_t isa typeof(x_0)
+    @test size(x_t) == size(x_0)
+
+    # batched 2d diffusion 
+    x_0 = randn(2, 3)
+    x_t = sampleforward(diffusion, [1.0, 2.0, 3.0], x_0)
+    @test x_t isa typeof(x_0)
+    @test size(x_t) == size(x_0)
+
+    diffusion = (
+        OrnsteinUhlenbeckDiffusion(0.0),
+        UniformDiscreteDiffusion(1.0, 4),
+    )
+
+    # 2x3 diffusion with multiple processes
+    x_0 = (randn(2, 3), rand(1:4, 2, 3))
+    x_t = sampleforward(diffusion, 1.0, x_0)
+    @test x_t isa typeof(x_0)
+    @test size(x_t[1]) == size(x_0[1])
+    @test size(x_t[2]) == size(x_0[2])
+
+    # batched 2d diffusion with multiple processes
+    x_0 = (randn(2, 3), rand(1:4, 2, 3))
+    x_t = sampleforward(diffusion, [1.0, 2.0, 3.0], x_0)
+    @test x_t isa typeof(x_0)
+    @test size(x_t[1]) == size(x_0[1])
+    @test size(x_t[2]) == size(x_0[2])
 end
 
 @testset "Scheduling" begin
