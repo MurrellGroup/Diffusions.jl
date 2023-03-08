@@ -1,5 +1,6 @@
 using Diffusions
 using Random
+using OneHotArrays
 using Test
 
 @testset "Diffusion" begin
@@ -41,6 +42,33 @@ using Test
     @test x_t isa typeof(x_0)
     @test size(x_t[1]) == size(x_0[1])
     @test size(x_t[2]) == size(x_0[2])
+end
+
+@testset "Discrete Diffusions" begin
+    ratematrix(k) = [i == j ? -(k - 1) / k : 1 / k for i in 1:k, j in 1:k]
+
+    k = 5
+    Q = ratematrix(k)
+    n_samples = 1_000_000
+    for r in [0.5, 1.0, 2.0], t in [0.0, 0.1, 1.0, 10.0]
+        P_t = exp(Q * r * t)
+
+        diffusion = UniformDiscreteDiffusion(r, k)
+        x_0 = fill(1, n_samples)
+        x_t = sampleforward(diffusion, t, x_0)
+        p1 = sum(x_t .== 1) / n_samples
+        @test abs(p1 - P_t[1,1]) < 1e-2
+        p2 = sum(x_t .== 2) / n_samples
+        @test abs(p2 - P_t[1,2]) < 1e-2
+
+        diffusion = IndependentDiscreteDiffusion(r, ones(k) ./ k)
+        x_0 = onehotbatch(fill(1, n_samples), 1:k)
+        x_t = sampleforward(diffusion, t, x_0)
+        p1 = sum(onecold(x_t) .== 1) / n_samples
+        @test abs(p1 - P_t[1,1]) < 1e-2
+        p2 = sum(onecold(x_t) .== 2) / n_samples
+        @test abs(p2 - P_t[1,2]) < 1e-2
+    end
 end
 
 @testset "Scheduling" begin
