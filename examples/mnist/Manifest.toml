@@ -281,7 +281,7 @@ uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
 version = "1.13.0"
 
 [[deps.Diffusions]]
-deps = ["Distributions", "LinearAlgebra", "OneHotArrays", "Quaternions", "Random", "Rotations", "StatsBase"]
+deps = ["Distributions", "InverseFunctions", "LinearAlgebra", "OneHotArrays", "Quaternions", "Random", "Rotations"]
 path = "../.."
 uuid = "37ad981a-d595-49ae-9c2b-ff1cecd25002"
 version = "0.1.0"
