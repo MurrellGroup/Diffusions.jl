@@ -2,27 +2,14 @@
 # https://github.com/FluxML/model-zoo/tree/master/vision/diffusion_mnist
 # The license is MIT: https://github.com/FluxML/model-zoo/blob/master/LICENSE.md
 
+using Diffusions: RandomFourierFeatures
 using Flux
 using Flux: @functor
 using MLUtils: flatten
+using Optimisers: Optimisers
 
-"""
-Projection of Gaussian Noise onto a time vector.
-# Notes
-This layer will help embed our random times onto the frequency domain. \n
-W is not trainable and is sampled once upon construction - see assertions below.
-# References
-paper-  https://arxiv.org/abs/2006.10739
-"""
-function GaussianFourierProjection(embed_dim, scale)
-    # Instantiate W once
-    W = randn(Float32, embed_dim ÷ 2) .* scale
-    # Return a function that always references the same W
-    function (t)
-        t_proj = t' .* W * Float32(2π)
-        return [sin.(t_proj); cos.(t_proj)]
-    end
-end
+@functor RandomFourierFeatures
+Optimisers.trainable(::RandomFourierFeatures) = (;)  # no trainable parameters
 
 """
 Create a UNet architecture as a backbone to a diffusion model. \n
@@ -44,7 +31,7 @@ User Facing API for UNet architecture.
 function UNet(c, channels=[32, 64, 128, 256], embed_dim=256, scale=30.0f0)
     k = 10  # number of classes
     return UNet((
-        gaussfourierproj=GaussianFourierProjection(embed_dim, scale),
+        gaussfourierproj=RandomFourierFeatures(embed_dim, scale),
         labelproj=Dense(k, embed_dim),
         linear=Dense(embed_dim, embed_dim, swish),
         # Encoding
