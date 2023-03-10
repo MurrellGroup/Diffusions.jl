@@ -1,5 +1,6 @@
 using Diffusions
 using Random
+using OneHotArrays
 using Test
 
 @testset "Diffusion" begin
@@ -41,6 +42,46 @@ using Test
     @test x_t isa typeof(x_0)
     @test size(x_t[1]) == size(x_0[1])
     @test size(x_t[2]) == size(x_0[2])
+end
+
+@testset "Discrete Diffusions" begin
+    n_samples = 10_000_000
+    rtol = 0.01
+    ratematrix(π) = [i == j ? -(sum(π) - π[j]) : π[j] for i in eachindex(π), j in eachindex(π)]
+    for r in [0.5, 1.0, 2.0], t in [0.1, 1.0, 10.0]
+        # uniform distribution at equilibrium
+        k = 5
+        Q = ratematrix(ones(k) / k)
+        P_t = exp(Q * r * t)
+
+        diffusion = UniformDiscreteDiffusion(r, k)
+        x_0 = fill(1, n_samples)
+        x_t = sampleforward(diffusion, t, x_0)
+        p1 = sum(x_t .== 1) / n_samples
+        @test isapprox(p1,  P_t[1,1]; rtol)
+        p2 = sum(x_t .== 2) / n_samples
+        @test isapprox(p2, P_t[1,2]; rtol)
+
+        diffusion = IndependentDiscreteDiffusion(r, ones(k) ./ k)
+        x_0 = onehotbatch(fill(1, n_samples), 1:k)
+        x_t = sampleforward(diffusion, t, x_0)
+        p1 = sum(onecold(x_t) .== 1) / n_samples
+        @test isapprox(p1, P_t[1,1]; rtol)
+        p2 = sum(onecold(x_t) .== 2) / n_samples
+        @test isapprox(p2, P_t[1,2]; rtol)
+
+        # non-uniform distribution at equilibrium
+        π = [0.05, 0.05, 0.2, 0.3, 0.4]
+        Q = ratematrix(π)
+        P_t = exp(Q * r * t)
+        diffusion = IndependentDiscreteDiffusion(r, π)
+        x_0 = onehotbatch(fill(1, n_samples), 1:k)
+        x_t = sampleforward(diffusion, t, x_0)
+        p1 = sum(onecold(x_t) .== 1) / n_samples
+        @test isapprox(p1, P_t[1,1]; rtol)
+        p2 = sum(onecold(x_t) .== 2) / n_samples
+        @test isapprox(p2, P_t[1,2]; rtol)
+    end
 end
 
 @testset "Scheduling" begin
