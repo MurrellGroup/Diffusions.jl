@@ -21,9 +21,9 @@ The discrete case, where an observation is a collection of discrete variables, i
 
 Importantly, multiple different kinds of diffusion can be combined, and jointly diffused and reconstructed together.
 
-### Visualization
+### Reversing the diffusion
 
-The inverse diffusion works by using the trained model to predict $\hat{x_0} = E[x_0|x_t]$, and then constructs an endpoint-conditioned sample along a stochastic bridge between $\hat{x_0}$ and $x_t$, at $x_{t'}$, from $P(x_{t'}|\hat{x_0},x_t,D)$, where $D$ is the diffusion process itself and $0 < t' < t$. This is visualized below, for a single variable under Ornstein–Uhlenbeck diffusion, showing multiple steps (with an exaggerated step size), clarifying how the randomness injected with each "bridge" influences the final sample:
+The inverse diffusion works by using the trained model to predict $\hat{x_0} = E[x_0|x_t]$, and then constructs an endpoint-conditioned sample along a stochastic bridge between $\hat{x_0}$ and $x_t$, at $x_{t-\epsilon}$, from $P(x_{t-\epsilon}|\hat{x_0},x_t,D)$, where $D$ is the diffusion process itself and $0 < t-\epsilon < t$. This is visualized below, for a single variable under Ornstein–Uhlenbeck diffusion, showing multiple steps (with an exaggerated step size), clarifying how the randomness injected with each "bridge" influences the final sample:
 
 <img src="https://user-images.githubusercontent.com/1152087/224138792-15dd802b-3e23-43bc-8e11-e332ce41d7a9.svg" width="650" background-color="white">
 
