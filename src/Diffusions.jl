@@ -18,6 +18,7 @@ module Diffusions
     include("utils.jl")
     include("randomfourierfeatures.jl")
     include("interface.jl")
+    include("loss.jl")
 
     export
         #Processes
@@ -34,10 +35,16 @@ module Diffusions
         eq_dist,
         #utils
         randcat,
-        rotation_features,
         RandomFourierFeatures,
         timeschedule,
         square,
-        reangle
+        Tracker,
+        reangle,
+        standard_loss,
+        rots2flatquats,
+        bcds2flatquats,
+        bcds2rots,
+        flatquats2rots
+
 
 end
