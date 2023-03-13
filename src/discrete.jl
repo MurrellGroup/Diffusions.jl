@@ -3,6 +3,12 @@
 struct IndependentDiscreteDiffusion{T <: Real} <: DiscreteStateProcess
     r::T
     π::Vector{T}
+
+    function IndependentDiscreteDiffusion{T}(r::T, π::Vector{T}) where T <: Real
+        r > 0 || throw(ArgumentError("r must be positive"))
+        all(≥(0), π) || throw(ArgumentError("elements of π must be non-negative"))
+        return new{T}(r, π ./ sum(π))
+    end
 end
 
 """
@@ -18,7 +24,8 @@ transition probability matrix at time t is
 where Q is a rate matrix with equilibrium distribution π.
 """
 function IndependentDiscreteDiffusion(r::Real, π::AbstractVector{<: Real})
-    return IndependentDiscreteDiffusion(float(r), π ./ sum(π))
+    T = promote_type(typeof(float(r)), eltype(π))
+    return IndependentDiscreteDiffusion{T}(convert(T, r), convert(Vector{T}, π))
 end
 
 eq_dist(model::IndependentDiscreteDiffusion) = Categorical(model.π)
