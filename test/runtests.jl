@@ -45,6 +45,16 @@ using Test
 end
 
 @testset "Discrete Diffusions" begin
+    for T in [Float32, Float64]
+        diffusion = IndependentDiscreteDiffusion(T(1.0), ones(T, 10))
+        @test diffusion isa IndependentDiscreteDiffusion{T}
+        @test diffusion.r ≈ T(1.0)
+        @test diffusion.π ≈ ones(T, 10) ./ 10  # check normalization
+    end
+
+    diffusion = IndependentDiscreteDiffusion(1.0f0, ones(10))
+    @test diffusion isa IndependentDiscreteDiffusion{Float64}
+
     n_samples = 10_000_000
     rtol = 0.01
     ratematrix(π) = [i == j ? -(sum(π) - π[j]) : π[j] for i in eachindex(π), j in eachindex(π)]
