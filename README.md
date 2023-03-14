@@ -31,6 +31,11 @@ Even though each variable is diffused independently, for extremely strongly corr
 
 <img src="https://user-images.githubusercontent.com/1152087/224140026-870a42bb-94bf-48be-86ce-a639b44cd199.gif" width="450">
 
+The motivation for this framing, where the model predicts $x_0$ and the reverse diffusion occurs via a diffusion bridge, is that we can achieve diffusion denoising for more structured kinds of data, so long as we can simulate or approximate a "bridge". For example, we can define a noise process over rotations, and train a model to sample from a distribution over rotations:
+
+<img src="https://user-images.githubusercontent.com/1152087/225127295-2fe3c66e-e999-4b4b-a1d4-4041f98b0942.gif" width="350">
+
+
 ### Example
 
 ```julia
