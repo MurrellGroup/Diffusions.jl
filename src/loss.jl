@@ -17,57 +17,67 @@ rot_ang(x) = oftype(x, 1/18)*(1-x)*(x-13)^2
 #-----Playing with rotations------
 
 function standard_loss(
-        P::RotationDiffusion{T},
-        t::T,
-        x0::Array{T,2},
-        x0hat::Array{T,2}; loss_scale = sqrt) where T <: Real
-    s = loss_scale(1 - exp(-t*P.rate*5))
-    (sum(rot_ang.(abs.(sum(x0 .* x0hat, dims = 1))))/length(x0))/s
+    P::RotationDiffusion{T},
+    t::Union{T, AbstractVector{T}},
+    x0::AbstractArray{T},
+    x0hat::AbstractArray{T}; loss_scale = sqrt
+) where T <: Real
+    #s = @. loss_scale(1 - exp(-t*P.rate*5))  # this doen't work (https://github.com/FluxML/Zygote.jl/issues/1399)
+    s = loss_scale.(1 .- exp.(.-t .* P.rate .* 5))
+    return sum(weightbatch(rot_ang.(abs.(sum(x0 .* x0hat, dims = 1))), inv.(s))) / length(x0)
 end
 
 min_ang(x1,x2) = min(abs(x1-x2),2pi-abs(x1-x2))
 
 function standard_loss(
-        P::Diffusions.WrappedDiffusion{T},
-        t::T,
-        x0::AbstractArray{T},
-        x0hat::AbstractArray{T}; loss_scale = sqrt) where T <: Real
-    s = loss_scale(1 - exp(-t*P.rate/8))
-    (sum(min_ang.(x0,x0hat).^2)/length(x0))/(2s)
+    P::Diffusions.WrappedDiffusion{T},
+    t::Union{T, AbstractVector{T}},
+    x0::AbstractArray{T},
+    x0hat::AbstractArray{T}; loss_scale = sqrt
+) where T <: Real
+    s = loss_scale.(1 .- exp.(.-t .* P.rate ./ 8))
+    return sum(weightbatch(min_ang.(x0, x0hat).^2, inv.(2s))) / length(x0)
 end
 
 function standard_loss(
-        P::OrnsteinUhlenbeckDiffusion{T},
-        t::T,
-        x0::AbstractArray{T},
-        x0hat::AbstractArray{T}; loss_scale = sqrt) where T <: Real
-    
-    s = loss_scale(1 - exp(-t*P.reversion)) #Need to fix this for non-N(0,1) equilibrium cases
-    (sum(abs2.(x0 .- x0hat))/length(x0))/s
+    P::OrnsteinUhlenbeckDiffusion{T},
+    t::Union{T, AbstractVector{T}},
+    x0::AbstractArray{T},
+    x0hat::AbstractArray{T}; loss_scale = sqrt
+) where T <: Real
+    s = loss_scale.(1 .- exp.(.-t .* P.reversion)) #Need to fix this for non-N(0,1) equilibrium cases
+    return sum(weightbatch(abs2.(x0 .- x0hat), inv.(s))) / length(x0)
 end
 
 crossent(ŷ,y) = mean(-sum(y .* log.(ŷ .+ 1.0f-10), dims = 1))
 
 function standard_loss(
-        P::IndependentDiscreteDiffusion{T},
-        t::T,
-        x0,
-        x0hat;
-        #This "ce" should be logitcrossentropy when Flux is imported
-        loss_scale = sqrt, ce = crossent) where T <: Real
+    P::IndependentDiscreteDiffusion{T},
+    t::Union{T, AbstractVector{T}},
+    x0,
+    x0hat;
+    #This "ce" should be logitcrossentropy when Flux is imported
+    loss_scale=sqrt, ce=crossent
+) where T <: Real
     k = length(P.π)
-    s = loss_scale(1 - exp(-t*P.r))
-    ce(x0,x0hat)/(s*15*((k-1)/k))
+    s = loss_scale.(1 .- exp.(.-t .* P.r))
+    return weightbatch(ce(x0, x0hat), inv.(s)) / (15 * ((k - 1) / k))
 end
 
 function standard_loss(
-        P::UniformDiscreteDiffusion{T},
-        t::T,
-        x0,
-        x0hat;
-        #This "ce" should be logitcrossentropy when Flux is imported
-        loss_scale = sqrt, ce = crossent) where T <: Real
+    P::UniformDiscreteDiffusion{T},
+    t::Union{T, AbstractVector{T}},
+    x0,
+    x0hat;
+    #This "ce" should be logitcrossentropy when Flux is imported
+    loss_scale=sqrt, ce=crossent
+) where T <: Real
     k = length(P.π)
-    s = loss_scale(1 - exp(-t*P.rate))
-    ce(x0,x0hat)/(s*15*((k-1)/k))
+    s = loss_scale(1 - exp(-t * P.rate))
+    return weightbatch(ce(x0, x0hat), inv.(s)) / (15 * ((k - 1) / k))
 end
+
+# Weight A with w along the last dimension (i.e., batch dimension)
+weightbatch(A::AbstractArray{T}, w::T) where T <: Real = A .* w
+weightbatch(A::AbstractArray{T}, w::AbstractVector{T}) where T <: Real =
+    A .* reshape(w, ntuple(i -> 1, ndims(A) - 1)..., :)
