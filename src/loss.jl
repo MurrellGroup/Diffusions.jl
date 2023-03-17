@@ -10,7 +10,7 @@
 #Matches acos^2 for values between 0.5 and 1 (where 1 is no angular difference)
 #Kinda like huber loss for rotation?
 #It avoids the grad singularity when angles are very far apart
-rot_ang(x) = (1/18)*(1-x)*(x-13)^2
+rot_ang(x) = oftype(x, 1/18)*(1-x)*(x-13)^2
 #rot_ang(x) = acos(x)^2 #Canonical
 #rot_ang(x) = -x #Dumb
 #rot_ang(x) = -8(x-1) + (4/3)*(x-1)^2 - (16/45)*(x-1)^3 + (4/35)*(x-1)^4 #Longer expansion
