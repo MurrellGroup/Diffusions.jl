@@ -23,6 +23,7 @@ end
 Return the number of masked elements.
 """
 nmasked(A::MaskedArray) = length(A.indices)
+nmasked(A::AbstractArray) = length(A)
 
 """
     maskedvec(A)
@@ -30,6 +31,7 @@ nmasked(A::MaskedArray) = length(A.indices)
 Return a view of masked elements as a vector.
 """
 maskedvec(A::MaskedArray) = view(A.data, A.indices)
+maskedvec(A::AbstractArray) = view(A, :)
 
 """
     mask(data, mask)
