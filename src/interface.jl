@@ -20,11 +20,10 @@ function sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x::
 end
 
 function sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x)
-    x_t = similar(x)
     d = ndims(x)
+    x_t = similar(x)
     for i in axes(x, d)
-        x_t_i = selectdim(x_t, d, i)
-        x_t_i .= sampleforward(rng, process, t[i], selectdim(x, d, i))
+        selectdim(x_t, d, i) .= sampleforward(rng, process, t[i], selectdim(x, d, i))
     end
     return x_t
 end
