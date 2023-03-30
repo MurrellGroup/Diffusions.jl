@@ -15,7 +15,7 @@ sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x) = sample(
 
 function sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x::MaskedArray)
     x = copy(x)
-    updatemasked!(x, sampleforward(rng, process, t, maskedvec(x)))
+    maskedvec(x) .= sampleforward(rng, process, t, maskedvec(x))
     return x
 end
 
@@ -69,7 +69,7 @@ function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real
     prior = forward(process, maskedvec(x_0), 0, s)
     likelihood = backward(process, maskedvec(x_t), s, t)
     x = copy(x_t)
-    updatemasked!(x, sample(rng, combine(prior, likelihood)))
+    maskedvec(x) .= sample(rng, combine(prior, likelihood))
     return x
 end
 

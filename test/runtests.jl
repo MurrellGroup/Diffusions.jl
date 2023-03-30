@@ -1,5 +1,5 @@
 using Diffusions
-using Diffusions: MaskedArray, mask, maskedvec, updatemasked!
+using Diffusions: MaskedArray, mask, nmasked, maskedvec
 using Random
 using OneHotArrays
 using StaticArrays
@@ -169,9 +169,7 @@ end
     function guess(x, t)
         # random "guess" for testing
         x = copy(x)
-        v = maskedvec(x)
-        v .+= randn(size(v))
-        updatemasked!(x, v)
+        maskedvec(x) .+= randn(nmasked(x))
         return x
     end
     x = samplebackward(guess, process, [1/8, 1/4, 1/2, 1/1], x_t)

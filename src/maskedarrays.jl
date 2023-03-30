@@ -1,15 +1,15 @@
 struct MaskedArray{T, A <: AbstractArray, N} <: AbstractArray{T, N}
     data::A
-    mask::BitArray{N}
+    indices::Vector{Int}
 
-    function MaskedArray(data::AbstractArray{T, N}, mask::BitArray{N}) where {T, N}
-        size(data) == size(mask) || throw(ArgumentError("data and mask must have the same size"))
-        return new{T, typeof(data), N}(data, mask)
+    function MaskedArray(data::AbstractArray{T, N}, indices::Vector{Int}) where {T, N}
+        # TODO: check integrity of indices (sorted, not duplicated, and more?)
+        return new{T, typeof(data), N}(data, indices)
     end
 end
 
 Base.size(A::MaskedArray) = size(A.data)
-Base.copy(A::MaskedArray) = MaskedArray(copy(A.data), copy(A.mask))
+Base.copy(A::MaskedArray) = MaskedArray(copy(A.data), copy(A.indices))
 Base.getindex(A::MaskedArray, i...) = A.data[i...]
 
 function Base.setindex!(A::MaskedArray, val, i...)
@@ -17,12 +17,19 @@ function Base.setindex!(A::MaskedArray, val, i...)
     return A
 end
 
-maskedvec(A::MaskedArray) = A.data[A.mask]
+"""
+    namsked(A)
 
-function updatemasked!(A::MaskedArray, vals::AbstractVector)
-    A.data[A.mask] .= vals
-    return A
-end
+Return the number of masked elements.
+"""
+nmasked(A::MaskedArray) = length(A.indices)
+
+"""
+    maskedvec(A)
+
+Return a view of masked elements as a vector.
+"""
+maskedvec(A::MaskedArray) = view(A.data, A.indices)
 
 """
     mask(data, mask)
@@ -31,7 +38,7 @@ Create a masked array.
 
 `data` and `mask` must have the same size.
 """
-mask(data::AbstractArray, mask::AbstractArray{Bool}) = MaskedArray(data, convert(BitArray, mask)) 
+mask(data::AbstractArray, mask::AbstractArray{Bool}) = MaskedArray(data, findall(vec(mask)))
 
-# avoid nesting masked arrays
-mask(masked::MaskedArray, mask::AbstractArray{Bool}) = MaskedArray(masked.data, mask)
+# this is to avoid nesting masked arrays
+mask(masked::MaskedArray, mask::AbstractArray{Bool}) = MaskedArray(masked.data, findall(vec(mask)))
