@@ -1,5 +1,5 @@
 using Diffusions
-using Diffusions: mask, MaskedArray
+using Diffusions: MaskedArray, mask, maskedvec, updatemasked!
 using Random
 using OneHotArrays
 using StaticArrays
@@ -163,11 +163,20 @@ end
     x_t = sampleforward(process, 1.0, masked)
     @test size(x_t) == size(x_0)
     @test x_t isa MaskedArray
-    for i in eachindex(x_0)
-        if m[i]
-            @test x_0[i] != x_t[i]
-        else
-            @test x_0[i] == x_t[i]
-        end
+    @test all(x_t[m] .!= x_0[m])
+    @test all(x_t[.!m] .== x_0[.!m])
+
+    function guess(x, t)
+        # random "guess" for testing
+        x = copy(x)
+        v = maskedvec(x)
+        v .+= randn(size(v))
+        updatemasked!(x, v)
+        return x
     end
+    x = samplebackward(guess, process, [1/8, 1/4, 1/2, 1/1], x_t)
+    @test size(x) == size(x_t)
+    @test x isa MaskedArray
+    @test all(x[m] .!= x_t[m])
+    @test all(x[.!m] .== x_t[.!m])
 end

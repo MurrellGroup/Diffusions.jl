@@ -80,6 +80,6 @@ endpoint_conditioned_sample(P::Process, s::Real, t::Real, x_0, x_t) = endpoint_c
 
 function checktimesteps(timesteps)
     length(timesteps) ≥ 2 || throw(ArgumentError("timesteps must have at least two timesteps"))
-    issorted(timesteps) || throw(ArgumentError("timesteps must be decreasing"))
+    issorted(timesteps) || throw(ArgumentError("timesteps must be increasing"))
     all(>(0), timesteps) || throw(ArgumentError("all timesteps must be positive"))
 end
