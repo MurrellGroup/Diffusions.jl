@@ -1,4 +1,5 @@
 using Diffusions
+using Diffusions: mask, MaskedArray
 using Random
 using OneHotArrays
 using StaticArrays
@@ -152,4 +153,21 @@ end
     @test rff isa RandomFourierFeatures{Float32}
     @test rff(1.0) isa Vector{Float32}
     @test rff([1.0]) isa Matrix{Float32}
+end
+
+@testset "Masked Diffusion" begin
+    process = OrnsteinUhlenbeckDiffusion(0.0, 1.0, 0.5)
+    x_0 = randn(5, 10)
+    m = x_0 .< 0
+    masked = mask(x_0, m)
+    x_t = sampleforward(process, 1.0, masked)
+    @test size(x_t) == size(x_0)
+    @test x_t isa MaskedArray
+    for i in eachindex(x_0)
+        if m[i]
+            @test x_0[i] != x_t[i]
+        else
+            @test x_0[i] == x_t[i]
+        end
+    end
 end
