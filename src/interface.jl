@@ -13,6 +13,12 @@ sampleforward(process, t, x) = sampleforward(Random.default_rng(), process, t, x
 sampleforward(rng::AbstractRNG, process, t::Union{Real, AbstractVector{<: Real}}, x) = sampleforward.(rng, process, (t,), x)
 sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x) = sample(rng, forward(process, x, 0, t))
 
+function sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x::MaskedArray)
+    x = copy(x)
+    updatemasked!(x, sampleforward(rng, process, t, maskedvec(x)))
+    return x
+end
+
 function sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x)
     x_t = similar(x)
     d = ndims(x)
@@ -41,7 +47,6 @@ function samplebackward(rng::AbstractRNG, guess, process, timesteps, x; tracker 
     checktimesteps(timesteps)
     i = lastindex(timesteps)
     t = timesteps[i]
-    #track!(tracker, t, x, x_0)
     while i > firstindex(timesteps)
         s = timesteps[i-1]
         x_0 = guess(x, t)
@@ -58,6 +63,14 @@ function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real
     prior = forward(process, x_0, 0, s)
     likelihood = backward(process, x_t, s, t)
     return sample(rng, combine(prior, likelihood))
+end
+
+function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real, t::Real, x_0::MaskedArray, x_t::MaskedArray)
+    prior = forward(process, maskedvec(x_0), 0, s)
+    likelihood = backward(process, maskedvec(x_t), s, t)
+    x = copy(x_t)
+    updatemasked!(x, sample(rng, combine(prior, likelihood)))
+    return x
 end
 
 endpoint_conditioned_sample(rng::AbstractRNG, process, s::Real, t::Real, x_0, x_t) =

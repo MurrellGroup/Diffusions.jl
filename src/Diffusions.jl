@@ -18,6 +18,7 @@ module Diffusions
     include("tracker.jl")
     include("utils.jl")
     include("randomfourierfeatures.jl")
+    include("maskedarrays.jl")
     include("interface.jl")
 
     export
