@@ -1,6 +1,5 @@
 
-
-# Diffusions.jl
+<img src="https://user-images.githubusercontent.com/1152087/229270888-239e6883-a405-4e4e-a976-efc8ce31e35e.svg" width="250">
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://murrellb.github.io/Diffusions.jl/stable/)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://murrellb.github.io/Diffusions.jl/dev/)
