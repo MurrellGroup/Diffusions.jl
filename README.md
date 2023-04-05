@@ -45,7 +45,7 @@ The motivation for this framing, where the model predicts $x_0$ and the reverse 
 
 Self-conditioning is a technique to enhance the quality of generated
 samples[^Chen22]. Self-conditioning takes the previously estimated `x_0` along
-with the diffused sample `x_t` to calculate the current estimate. In
+with the diffused sample `x_t` to update the current estimate. In
 Diffusions.jl, this can be achieved using a closure that retains the latest
 estimate of `x_0`. The following code demonstrates how to generate 28-by-28
 grayscale images (with a batch of 64 samples):
