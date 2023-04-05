@@ -47,8 +47,9 @@ Self-conditioning is a technique to enhance the quality of generated
 samples[^Chen22]. Self-conditioning takes the previously estimated `x_0` along
 with the diffused sample `x_t` to update the current estimate. In
 Diffusions.jl, this can be achieved using a closure that retains the latest
-estimate of `x_0`. The following code demonstrates how to generate 28-by-28
-grayscale images (with a batch of 64 samples):
+estimate of `x_0` during backward sampling. The following code demonstrates how
+to generate 28-by-28 grayscale images (with a batch of 64 samples) using
+self-conditioning:
 ```julia
 function selfcondition(x)
     # Initialize x_0
