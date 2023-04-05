@@ -43,12 +43,12 @@ The motivation for this framing, where the model predicts $x_0$ and the reverse 
 
 #### Self-conditioning
 
-Self-conditioning is a technique to enhance the quality of generated samples
-[^Chen22]. Self-conditioning takes the previously estimated `x_0` along with
-the diffused sample `x_t` to calculate the current estimate. In Diffusions.jl,
-this can be achieved using a closure that retains the latest estimate of `x_0`.
-The following code demonstrates how to generate 28-by-28 grayscale images (with
-a batch of 64 samples):
+Self-conditioning is a technique to enhance the quality of generated
+samples[^Chen22]. Self-conditioning takes the previously estimated `x_0` along
+with the diffused sample `x_t` to calculate the current estimate. In
+Diffusions.jl, this can be achieved using a closure that retains the latest
+estimate of `x_0`. The following code demonstrates how to generate 28-by-28
+grayscale images (with a batch of 64 samples):
 ```julia
 function selfcondition(x)
     # Initialize x_0
@@ -67,7 +67,7 @@ x_0 = samplebackward(selfcondition(x), diffusion, timesteps, x)
 Note that the model must be trained to accept the previous estimate as
 additional data, which is usually represented as `model(x_t, zero(x_t), t)` or
 `zero(x_t)` with a 50% probability for each. For further details, please
-consult [^Chen22].
+consult the original paper[^Chen22].
 
 [^Chen22]: Chen, Ting, Ruixiang Zhang, and Geoffrey Hinton. "Analog bits: Generating discrete data using diffusion models with self-conditioning." arXiv preprint arXiv:2208.04202 (2022).
 
