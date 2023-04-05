@@ -66,8 +66,26 @@ x_0 = samplebackward(selfcondition(x), diffusion, timesteps, x)
 
 Note that the model must be trained to accept the previous estimate as
 additional data, which is usually represented as `model(x_t, zero(x_t), t)` or
-`zero(x_t)` with a 50% probability for each. For further details, please
-consult the original paper[^Chen22].
+`zero(x_t)` with a 50% probability for each. The training code will look like:
+```julia
+# Get estimated data for self-conditioned training
+function estimate(model, x_t, t)
+    x_0 = model(x_t, zero(x_t), t)
+    x_0[:,:,rand(size(x_0, 3)) .< 0.5] .= 0  # nullify estimates with a 50% probability
+    return x_0
+end
+
+# Inside a training loop (x is a batch of training data):
+t = sampletime()
+x_t = sampleforward(diffusion, t, x)
+x_0 = estimate(model, x_t, t)
+lossval, grads = Flux.withgradient(model) do model
+    x̂ = model(x, x_0, t)
+    return loss(x̂, x)
+end
+```
+
+For further details, please consult the original paper[^Chen22].
 
 [^Chen22]: Chen, Ting, Ruixiang Zhang, and Geoffrey Hinton. "Analog bits: Generating discrete data using diffusion models with self-conditioning." arXiv preprint arXiv:2208.04202 (2022).
 
