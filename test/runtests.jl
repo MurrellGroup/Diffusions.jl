@@ -76,9 +76,9 @@ end
         diffusion = IndependentDiscreteDiffusion(r, ones(SVector{k, Float64}))
         x_0 = fill([1; zero(SVector{k-1, Int})], n_samples)
         x_t = sampleforward(diffusion, t, x_0)
-        p1 = sum(onecold(x_t) .== 1) / n_samples
+        p1 = sum(onecold.(x_t) .== 1) / n_samples
         @test isapprox(p1, P_t[1,1]; rtol)
-        p2 = sum(onecold(x_t) .== 2) / n_samples
+        p2 = sum(onecold.(x_t) .== 2) / n_samples
         @test isapprox(p2, P_t[1,2]; rtol)
 
         # non-uniform distribution at equilibrium
@@ -88,9 +88,9 @@ end
         diffusion = IndependentDiscreteDiffusion(r, π)
         x_0 = fill([1; zero(SVector{k-1, Int})], n_samples)
         x_t = sampleforward(diffusion, t, x_0)
-        p1 = sum(onecold(x_t) .== 1) / n_samples
+        p1 = sum(onecold.(x_t) .== 1) / n_samples
         @test isapprox(p1, P_t[1,1]; rtol)
-        p2 = sum(onecold(x_t) .== 2) / n_samples
+        p2 = sum(onecold.(x_t) .== 2) / n_samples
         @test isapprox(p2, P_t[1,2]; rtol)
     end
 end
