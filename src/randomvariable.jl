@@ -18,16 +18,16 @@ function combine(X::GaussianVariables, lik)
 end
 
 
-struct CategoricalVariables{T, A <: AbstractArray{T}}
-    # the first dimension stores a vector of probabilities
-    p::A
+struct CategoricalVariables{K, T}
+    p::Array{SVector{K, T}}
 end
 
-ncategories(X::CategoricalVariables) = size(X.p, 1)
+ncategories(::CategoricalVariables{K}) where K = K
 
-Base.size(X::CategoricalVariables) = Base.tail(size(X.p))
+Base.size(X::CategoricalVariables) = size(X.p)
 
-sample(rng::AbstractRNG, X::CategoricalVariables) = onehotbatch(randcat(rng, X.p),1:size(X.p,1))
+sample(rng::AbstractRNG, X::CategoricalVariables) =
+    onehotbatch([randcat(rng, p) for p in X.p], 1:ncategories(X))
 
 function combine(X::CategoricalVariables, lik)
     p = copy(X.p) .* lik
@@ -36,4 +36,3 @@ function combine(X::CategoricalVariables, lik)
     end
     return CategoricalVariables(p)
 end
-

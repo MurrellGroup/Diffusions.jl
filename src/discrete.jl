@@ -1,13 +1,13 @@
 #This is basically F81, but with arb state size and linear prop ops
 #IndependentDiscreteDiffusion = "Independent Jumps", as in every time a mutation event happens, you jump to a new state independent of the current state.
-struct IndependentDiscreteDiffusion{T <: Real} <: DiscreteStateProcess
+struct IndependentDiscreteDiffusion{K, T <: Real} <: DiscreteStateProcess
     r::T
-    π::Vector{T}
+    π::SVector{K, T}
 
-    function IndependentDiscreteDiffusion{T}(r::T, π::Vector{T}) where T <: Real
+    function IndependentDiscreteDiffusion{T}(r::T, π::SVector{K, T}) where {K, T <: Real}
         r > 0 || throw(ArgumentError("r must be positive"))
         all(≥(0), π) || throw(ArgumentError("elements of π must be non-negative"))
-        return new{T}(r, π ./ sum(π))
+        return new{K, T}(r, π ./ sum(π))
     end
 end
 
@@ -23,9 +23,9 @@ transition probability matrix at time t is
 
 where Q is a rate matrix with equilibrium distribution π.
 """
-function IndependentDiscreteDiffusion(r::Real, π::AbstractVector{<: Real})
-    T = promote_type(typeof(float(r)), eltype(π))
-    return IndependentDiscreteDiffusion{T}(convert(T, r), convert(Vector{T}, π))
+function IndependentDiscreteDiffusion(r::Real, π::SVector{K, <: Real}) where K
+    T = promote_type(typeof(r), eltype(π))
+    return IndependentDiscreteDiffusion{T}(convert(T, r), convert(SVector{K, T}, π))
 end
 
 eq_dist(model::IndependentDiscreteDiffusion) = Categorical(model.π)
@@ -35,12 +35,12 @@ function forward(process::IndependentDiscreteDiffusion, x_s::AbstractArray, s::R
     pow = exp(-r * (t - s))
     c1 = (1 - pow) .* π
     c2 = pow .+ c1
-    return CategoricalVariables(@. c1 * (1 - x_s) + c2 * x_s)
+    return CategoricalVariables([@. c1 * (1 - x) + c2 * x for x in x_s])
 end
 
 function backward(process::IndependentDiscreteDiffusion, x_t::AbstractArray, s::Real, t::Real)
     (;r, π) = process
     pow = exp(-r * (t - s))
     c1 = (1 - pow) .* π
-    return pow .* x_t .+ sum(x_t .* c1, dims = 1)
+    return [pow * x .+ x'c1 for x in x_t]
 end

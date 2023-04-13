@@ -2,7 +2,7 @@
 
 julia_version = "1.8.5"
 manifest_format = "2.0"
-project_hash = "c05f26797ebfd235aeaafd9a485cafa9a6d950a8"
+project_hash = "380947eea551eea24a4b624ca8e187a027ae1d83"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -158,6 +158,17 @@ uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 [[deps.SparseArrays]]
 deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[deps.StaticArrays]]
+deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
+git-tree-sha1 = "b8d897fe7fa688e93aef573711cb207c08c9e11e"
+uuid = "90137ffa-7385-5640-81b9-e52037218182"
+version = "1.5.19"
+
+[[deps.StaticArraysCore]]
+git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
+uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
+version = "1.4.0"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]

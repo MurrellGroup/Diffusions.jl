@@ -6,6 +6,7 @@ module Diffusions
     using Rotations
     using Quaternions
     using InverseFunctions: inverse, square
+    using StaticArrays: SVector
 
     include("types.jl")
     include("randomvariable.jl")

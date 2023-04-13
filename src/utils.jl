@@ -1,3 +1,4 @@
+#=
 # Random sampling from categorical distributions
 randcat(p::AbstractArray) = randcat(Random.default_rng(), p)
 
@@ -17,6 +18,21 @@ function randcat(rng::AbstractRNG, p::AbstractArray)
         X[ix] = k
     end
     return X
+end
+=#
+
+function randcat(rng::AbstractRNG, p::AbstractVector)
+    K = length(p)
+    @assert K ≥ 1
+    # This algorithm is O(K), but it is fine because we don't generate many
+    # samples from the same distribution.
+    u = rand(rng, eltype(p))
+    k = 0
+    while u ≥ 0 && k < K
+        k += 1
+        u -= p[k]
+    end
+    return k
 end
 
 """
