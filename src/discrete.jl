@@ -6,6 +6,7 @@ struct IndependentDiscreteDiffusion{K, T <: Real} <: DiscreteStateProcess
 
     function IndependentDiscreteDiffusion{T}(r::T, π::SVector{K, T}) where {K, T <: Real}
         r > 0 || throw(ArgumentError("r must be positive"))
+        sum(π) > 0 || throw(ArgumentError("sum of π must be positive"))
         all(≥(0), π) || throw(ArgumentError("elements of π must be non-negative"))
         return new{K, T}(r, π ./ sum(π))
     end
