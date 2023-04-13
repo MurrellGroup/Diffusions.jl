@@ -4,6 +4,22 @@ using OneHotArrays
 using StaticArrays
 using Test
 
+@testset "Random categorical" begin
+    rng = Xoshiro(12345)
+    p = [0.1, 0.2, 0.3, 0.4]
+    x = randcat(rng, p)
+    @test x isa Int
+
+    N = 1_000_000
+    x = [randcat(rng, p) for _ in 1:N]
+    @test minimum(x) ≥ 1
+    @test maximum(x) ≤ 4
+    @test 0.099 < sum(==(1), x) / N < 0.101
+    @test 0.199 < sum(==(2), x) / N < 0.201
+    @test 0.299 < sum(==(3), x) / N < 0.301
+    @test 0.399 < sum(==(4), x) / N < 0.401
+end
+
 @testset "Diffusion" begin
     diffusion = OrnsteinUhlenbeckDiffusion(0.0)
 
@@ -137,26 +153,3 @@ end
     @test rff(1.0) isa Vector{Float32}
     @test rff([1.0]) isa Matrix{Float32}
 end
-
-#=
-@testset "Random categorical" begin
-    rng = Xoshiro(12345)
-    p = [
-        0.1 0.3
-        0.2 0.5
-        0.7 0.2
-    ]
-    x = randcat(rng, p)
-    @test size(x) == (2,)
-    @test x isa Vector{Int}
-
-    # test a point to avoid stupid bugs
-    N = 1_000_000
-    n = 0
-    for _ in 1:N
-        x = randcat(rng, p)
-        n += x[1] == 1
-    end
-    @test 0.099 < n / N < 0.101
-end
-=#
