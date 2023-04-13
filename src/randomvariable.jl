@@ -26,13 +26,21 @@ ncategories(::CategoricalVariables{K}) where K = K
 
 Base.size(X::CategoricalVariables) = size(X.p)
 
-sample(rng::AbstractRNG, X::CategoricalVariables) =
-    onehotbatch([randcat(rng, p) for p in X.p], 1:ncategories(X))
+function sample(rng::AbstractRNG, X::CategoricalVariables{K, T}) where {K, T}
+    x = Array{SVector{K, Int}}(undef, size(X))
+    for i in eachindex(x, X.p)
+        k = randcat(rng, X.p[i])
+        x[i] = onehotsvec(K, k)
+    end
+    return x
+end
+
+onehotsvec(K, k) = SVector{K}(ntuple(_ -> 0, k - 1)..., 1, ntuple(_ -> 0, K - k)...) 
 
 function combine(X::CategoricalVariables, lik)
-    p = copy(X.p) .* lik
-    for i in CartesianIndices(size(X))
-        p[:,i] ./= sum(@view p[:,i])
+    p = map(.*, X.p, lik)
+    for i in eachindex(p)
+        p[i] = p[i] ./ sum(p[i])
     end
     return CategoricalVariables(p)
 end
