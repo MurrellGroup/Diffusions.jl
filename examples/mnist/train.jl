@@ -29,7 +29,7 @@ elseif lowercase(ARGS[1]) == "fashionmnist"
 else
     error("the dataset name must be MNIST or FashionMNIST")
 end
-preprocess((x, y)) = reshape(x, 28, 28, 1, :), onehotbatch(y, 0:9)
+preprocess((x, y)) = reshape(x, 28, 28, 1, :), y .+ 1
 xtrain, ytrain = preprocess(dataset(:train)[:])
 xtest, ytest = preprocess(dataset(:test)[:])
 dataloader_train = DataLoader((xtrain, ytrain); batchsize)
@@ -56,8 +56,7 @@ sampletime(n) = Float32.(exp.(rand(Uniform(log(t_min), log(t_max)), n)))
 # Diffuse a batch of images and labels up to random times
 function diffuse(x, y)
     t = sampletime(size(x, 4))
-    x, y = sampleforward(diffusion, t, (x, onecold(y)))
-    y = onehotbatch(y, 1:10)
+    x, y = sampleforward(diffusion, t, (x, y))
     x, y, t = device((x, y, t))
     if self_conditioned
         x_0, _ = model(cat(x, zero(x), dims = 3), y, t)
@@ -74,6 +73,7 @@ for epoch in 1:n_epochs
     loss_train = 0.0
     for (x, y) in dataloader_train
         diffused = diffuse(x, y)
+        y = onehotbatch(y, 1:10)
         x, y = device((x, y))
         loss, grads = Flux.withgradient(model) do model
             x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
@@ -89,6 +89,7 @@ for epoch in 1:n_epochs
     loss_reconst = loss_class = 0.0
     for (x, y) in dataloader_test
         diffused = diffuse(x, y)
+        y = onehotbatch(y, 1:10)
         x, y = device((x, y))
         x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
         loss_reconst += mse(sigmoid.(x̂), x)
