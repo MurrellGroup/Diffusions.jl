@@ -5,7 +5,7 @@ using Distributions: Uniform
 using Flux.Data: DataLoader
 using Flux.Losses: mse, logitcrossentropy
 using MLDatasets: MNIST, FashionMNIST
-using OneHotArrays: onehotbatch, onecold
+using OneHotArrays: onehotbatch
 using Optimisers: Optimisers, WeightDecay, Adam
 using Printf: @printf, @sprintf
 using Statistics: mean
@@ -68,17 +68,18 @@ function diffuse(x, y)
     return (;x, y, t)
 end
 
+onehotlabel(y) = onehotbatch(y, 1:10)
+
 starttime = now()
 for epoch in 1:n_epochs
     loss_train = 0.0
     for (x, y) in dataloader_train
         diffused = diffuse(x, y)
-        y = onehotbatch(y, 1:10)
         x, y = device((x, y))
         loss, grads = Flux.withgradient(model) do model
             x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
             reconst = mse(sigmoid.(x̂), x)
-            class = logitcrossentropy(ŷ, y)
+            class = logitcrossentropy(ŷ, onehotlabel(y))
             return reconst + λ * class
         end
         Optimisers.update!(state, model, grads[1])
@@ -89,11 +90,10 @@ for epoch in 1:n_epochs
     loss_reconst = loss_class = 0.0
     for (x, y) in dataloader_test
         diffused = diffuse(x, y)
-        y = onehotbatch(y, 1:10)
         x, y = device((x, y))
         x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
         loss_reconst += mse(sigmoid.(x̂), x)
-        loss_class += logitcrossentropy(ŷ, y)
+        loss_class += logitcrossentropy(ŷ, onehotlabel(y))
     end
     loss_reconst /= length(dataloader_test)
     loss_class /= length(dataloader_test)
