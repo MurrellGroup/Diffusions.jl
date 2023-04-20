@@ -27,7 +27,10 @@ function standard_loss(
     return sum(weightbatch(rot_ang.(abs.(sum(x0 .* x0hat, dims = 1))), inv.(s))) / length(x0)
 end
 
-min_ang(x1,x2) = min(abs(x1-x2),2pi-abs(x1-x2))
+function min_ang(x1, x2)
+    diff = abs(x1 - x2)
+    return min(diff, oftype(diff, 2π) - diff)
+end
 
 function standard_loss(
     P::Diffusions.WrappedDiffusion{T},
