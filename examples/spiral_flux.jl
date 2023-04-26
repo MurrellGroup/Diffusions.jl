@@ -28,7 +28,7 @@ model(x,t) = decode(embed(x)
 )
 
 #The timestep schedule
-timesteps = timeschedule(exp,Float32(0.000001),Float32(10.0),100)
+timesteps = timeschedule(exp, 1.0f-6, 1.0f+1, 100)
 
 #Define the diffusion process
 P = OrnsteinUhlenbeckDiffusion(1.f0)
@@ -51,7 +51,7 @@ for iter in 1:250000
     #Loss and gradient
     l,gs = Flux.withgradient(ps) do
         x0hat = model(xt,t)
-        standard_loss(P,t,x0,x0hat)
+        standardloss(P, t, x0hat, x0)
     end
     
     #Update the parameters
@@ -80,15 +80,15 @@ track = Diffusions.Tracker()
 
 #Plot, alongside target
 train = hcat([target_sample() for i in 1:500]...)
-pl1 = scatter(train[1,:],train[2,:], markerstrokewidth = 0.0, color = "red", label = "True samples", alpha = 0.55)
-pl2 = scatter(x0diff[1,:],x0diff[2,:], markerstrokewidth = 0.0, color = "blue", label = "Diffusion Samples", alpha = 0.55)
-pl = plot(pl1,pl2, layout = (1,2), size = (600,300))
+pl1 = scatter(train[1,:], train[2,:], markerstrokewidth = 0.0, color = "red", label = "True samples", alpha = 0.55)
+pl2 = scatter(x0diff[1,:], x0diff[2,:], markerstrokewidth = 0.0, color = "blue", label = "Diffusion Samples", alpha = 0.55)
+pl = plot(pl1, pl2, layout = (1,2), size = (600,300))
 
 #Visualize the diffusion trajectory both for xt, and x0|xt
 @gif for i in 1:length(track.time)
-    scatter(track.data[i][1,:],track.data[i][2,:], markerstrokewidth = 0.0, axis=([], false),
+    scatter(track.data[i][1,:], track.data[i][2,:], markerstrokewidth = 0.0, axis = ([], false),
     color = "blue", label = L"x_t")
-    scatter!(track.x0[i][1,:],track.x0[i][2,:], markerstrokewidth = 0.0, axis=([], false),
+    scatter!(track.x0[i][1,:], track.x0[i][2,:], markerstrokewidth = 0.0, axis = ([], false),
     color = "red", label = L"x_0|x_t", xlim = (-3,4.2), ylim = (-3.5,5.2), alpha = 0.5, 
     markersize = 2.5, legend = :topleft)
 end
