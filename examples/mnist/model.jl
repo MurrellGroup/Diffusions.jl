@@ -97,7 +97,7 @@ function (unet::UNet)(x, y, t)
     h = unet.layers.tconv1(cat(h, h1; dims=3))
     # Classification
     logits = unet.layers.class(flatten(unet.layers.maxpool(h4)))
-    return h, logits
+    return sigmoid.(h), logits
 end
 
 """

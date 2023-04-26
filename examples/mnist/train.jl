@@ -60,7 +60,6 @@ function diffuse(x, y)
     x, y, t = device((x, y, t))
     if self_conditioned
         x_0, _ = model(cat(x, zero(x), dims = 3), y, t)
-        x_0 = sigmoid.(x_0)
         # nullify images with 50% probability
         x_0[:,:,:,rand(size(x_0, 4)) .< 0.5] .= 0
         x = cat(x, x_0, dims = 3)
@@ -78,7 +77,7 @@ for epoch in 1:n_epochs
         x, y = device((x, y))
         loss, grads = Flux.withgradient(model) do model
             x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
-            reconst = mse(sigmoid.(x̂), x)
+            reconst = mse(x̂, x)
             class = logitcrossentropy(ŷ, onehotlabel(y))
             return reconst + λ * class
         end
@@ -92,7 +91,7 @@ for epoch in 1:n_epochs
         diffused = diffuse(x, y)
         x, y = device((x, y))
         x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
-        loss_reconst += mse(sigmoid.(x̂), x)
+        loss_reconst += mse(x̂, x)
         loss_class += logitcrossentropy(ŷ, onehotlabel(y))
     end
     loss_reconst /= length(dataloader_test)
