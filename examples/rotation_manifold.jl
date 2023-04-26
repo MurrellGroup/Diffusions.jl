@@ -51,7 +51,7 @@ decode = Chain(
 rotmodel(x,T) = bcds2flatquats(decode(embed(x) .+ rff(log(T))))
 
 #The timestep schedule
-timesteps = timeschedule(exp,Float32(0.000001),Float32(10.0),100)
+timesteps = timeschedule(exp, 1.0f-6, 1.0f+1, 100)
 
 #Define the rotational diffusion process
 P = RotationDiffusion(1.f0)
@@ -78,7 +78,7 @@ for iter in 1:250000
     #Loss and gradient
     l,gs = Flux.withgradient(ps) do
         x0hat_flatquats = rotmodel(xt_flatquats,t)
-        standard_loss(P,t,x0_flatquats,x0hat_flatquats)
+        standardloss(P, t, x0hat_flatquats, x0_flatquats)
     end
     
     #Update the parameters
@@ -101,9 +101,9 @@ N = 250
 x_T = [rand(QuatRotation{Float32}) for i in 1:N]
 
 pl = plot()
-for i in 1:length(x_T)
-    plot_rot!(x_T[i], label = :none, alpha = 0.2)
-    plot_rot!(x_T[i], plotfun = scatter!, label = :none,
+for x in x_T
+    plot_rot!(x, label = :none, alpha = 0.2)
+    plot_rot!(x, plotfun = scatter!, label = :none,
         markerstrokewidth = 0.0, alpha = 0.2)
 end
 pl
@@ -118,9 +118,9 @@ track = Diffusions.Tracker()
 @time x0diff = samplebackward(xzerohat_NN, P, timesteps, x_T, tracker = track);
 
 pl = plot()
-for i in 1:length(x0diff)
-    plot_rot!(x0diff[i], label = :none, alpha = 0.2)
-    plot_rot!(x0diff[i], plotfun = scatter!, label = :none,
+for x in x0diff
+    plot_rot!(x, label = :none, alpha = 0.2)
+    plot_rot!(x, plotfun = scatter!, label = :none,
         markerstrokewidth = 0.0, alpha = 0.2)
 end
 for l in 0:200
@@ -132,9 +132,9 @@ pl
 #Make an animated gif of the rotational diffusion
 @gif for x0diff in track.data
     pl = plot()
-    for i in 1:length(x0diff)
-        plot_rot!(x0diff[i], label = :none, alpha = 0.2)
-        plot_rot!(x0diff[i], plotfun = scatter!, label = :none,
+    for x in x0diff
+        plot_rot!(x, label = :none, alpha = 0.2)
+        plot_rot!(x, plotfun = scatter!, label = :none,
             markerstrokewidth = 0.0, alpha = 0.2)
     end
     for l in 0:200
