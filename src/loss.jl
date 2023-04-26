@@ -27,43 +27,43 @@ scaledloss(loss, x̂, x::MaskedArray, s) = mean(scalebatch(loss(x̂, x.data), s)
 scaledloss(loss, x̂, x::AbstractArray, s) = mean(scalebatch(loss(x̂, x), s))
 
 
-defaultscaler(p::OrnsteinUhlenbeckDiffusion) = t -> sqrt(1 - exp(-t * p.reversion))
+defaultscaler(p::OrnsteinUhlenbeckDiffusion, t::Real) = sqrt(1 - exp(-t * p.reversion))
 
 function standardloss(
     p::OrnsteinUhlenbeckDiffusion,
     t::Union{Real, AbstractVector{<: Real}},
     x̂, x;
-    scaler = defaultscaler(p)
+    scaler = defaultscaler
 )
     loss(x̂, x) = abs2.(x̂ .- x)
-    return scaledloss(loss, x̂, x, scaler.(t))
+    return scaledloss(loss, x̂, x, scaler.(p, t))
 end
 
-defaultscaler(p::RotationDiffusion) = t -> sqrt(1 - exp(-t * p.rate * 5))
+defaultscaler(p::RotationDiffusion, t::Real) = sqrt(1 - exp(-t * p.rate * 5))
 
 function standardloss(
     p::RotationDiffusion,
     t::Union{Real, AbstractVector{<: Real}},
     x̂, x;
-    scaler = defaultscaler(p)
+    scaler = defaultscaler
 )
     loss(x̂, x) = rotang.(abs.(sum(x̂ .* x, dims = 1)))
-    return scaledloss(loss, x̂, x, scaler.(t)) / size(x, 1)
+    return scaledloss(loss, x̂, x, scaler.(p, t)) / size(x, 1)
 end
 
 rotang(x) = 1//18 * (1 - x) * (x - 13)^2
 
 
-defaultscaler(p::WrappedDiffusion) = t -> 2 * sqrt(1 - exp(-t * p.rate / 8))
+defaultscaler(p::WrappedDiffusion, t::Real) = 2 * sqrt(1 - exp(-t * p.rate / 8))
 
 function standardloss(
     p::WrappedDiffusion,
     t::Union{Real, AbstractVector{<: Real}},
     x̂, x;
-    scaler = defaultscaler(p)
+    scaler = defaultscaler
 )
     loss(x̂, x) = abs2.(minang.(x̂, x))
-    return scaledloss(loss, x̂, x, scaler.(t))
+    return scaledloss(loss, x̂, x, scaler.(p, t))
 end
 
 function minang(x1, x2)
@@ -72,29 +72,29 @@ function minang(x1, x2)
 end
 
 
-defaultscaler(p::UniformDiscreteDiffusion) = t -> sqrt(1 - exp(-t * p.rate))
+defaultscaler(p::UniformDiscreteDiffusion, t::Real) = sqrt(1 - exp(-t * p.rate))
 
 function standardloss(
     p::UniformDiscreteDiffusion,
     t::Union{Real, AbstractVector{<: Real}},
     x̂, x;
-    scaler = defaultscaler(p)
+    scaler = defaultscaler
 )
     loss(x̂, x) = logitcrossentropy(x̂, x)
-    return scaledloss(loss, x̂, x, scaler.(t)) / ((p.k - 1) / p.k) * 1.44f0
+    return scaledloss(loss, x̂, x, scaler.(p, t)) / ((p.k - 1) / p.k) * 1.44f0
 end
 
 logitcrossentropy(x̂, x; dims = 1) = -sum(x .* logsoftmax(x̂; dims); dims)
 
 
-defaultscaler(p::IndependentDiscreteDiffusion) = t -> sqrt(1 - exp(-t * p.r))
+defaultscaler(p::IndependentDiscreteDiffusion, t::Real) = sqrt(1 - exp(-t * p.r))
 
 function standardloss(
     p::IndependentDiscreteDiffusion{K},
     t::Union{Real, AbstractVector{<: Real}},
     x̂, x;
-    scaler = defaultscaler(p)
+    scaler = defaultscaler
 ) where K
     loss(x̂, x) = logitcrossentropy(x̂, x)
-    return scaledloss(loss, x̂, x, scaler.(t)) / ((K - 1) / K) * 1.44f0
+    return scaledloss(loss, x̂, x, scaler.(p, t)) / ((K - 1) / K) * 1.44f0
 end
