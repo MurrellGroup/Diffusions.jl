@@ -7,6 +7,7 @@ module Diffusions
     using Quaternions
     using InverseFunctions: inverse, square
     using StaticArrays: SVector
+    using NNlib: logsoftmax
 
     include("types.jl")
     include("randomvariable.jl")
@@ -42,7 +43,7 @@ module Diffusions
         square,
         Tracker,
         reangle,
-        standard_loss,
+        standardloss,
         rots2flatquats,
         bcds2flatquats,
         bcds2rots,

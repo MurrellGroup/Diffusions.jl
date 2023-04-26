@@ -35,7 +35,8 @@ function sample(rng::AbstractRNG, X::CategoricalVariables{K, T}) where {K, T}
     return x
 end
 
-onehotsvec(K, k) = SVector{K}(ntuple(_ -> 0, k - 1)..., 1, ntuple(_ -> 0, K - k)...) 
+onehotsvec(K, k::Integer) = SVector{K}(ntuple(_ -> 0, k - 1)..., 1, ntuple(_ -> 0, K - k)...) 
+onehotsvec(K, x::AbstractArray{<: Integer}) = map(k -> onehotsvec(K, k), x)
 
 function combine(X::CategoricalVariables, lik)
     p = map(.*, X.p, lik)
