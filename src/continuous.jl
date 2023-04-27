@@ -11,7 +11,7 @@ OrnsteinUhlenbeckDiffusion(mean::T) where T <: Real = OrnsteinUhlenbeckDiffusion
 
 var(model::OrnsteinUhlenbeckDiffusion) = (model.volatility^2) / (2 * model.reversion)
 
-eq_dist(model::OrnsteinUhlenbeckDiffusion) = Normal(model.mean,var(model))
+eq_dist(model::OrnsteinUhlenbeckDiffusion) = Normal(model.mean,sqrt(var(model)))
 
 function forward(process::OrnsteinUhlenbeckDiffusion, x_s::AbstractArray, s::Real, t::Real)
     μ, σ, θ = process.mean, process.volatility, process.reversion

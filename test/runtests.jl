@@ -178,3 +178,23 @@ end
     @test all(x[m] .!= x_t[m])
     @test all(x[.!m] .== x_t[.!m])
 end
+
+@testset "Loss" begin
+    p = OrnsteinUhlenbeckDiffusion(0.0, 1.0, 0.5)
+    x_0 = randn(5, 10)
+    t = rand(10)
+    @test standardloss(p, t, x_0, x_0) == 0
+    x = rand(5, 10)
+    @test standardloss(p, t, x, x_0) > 0
+
+    # unmasked elements don't contribute to the loss
+    x = copy(x_0)
+    m = x_0 .< 0
+    x_0 = mask(x_0, m)
+    x[.!m] .= 0
+    @test standardloss(p, t, x, x_0) == 0
+
+    # but masked elements do
+    x[m] .= 0
+    @test standardloss(p, t, x, x_0) > 0
+end
