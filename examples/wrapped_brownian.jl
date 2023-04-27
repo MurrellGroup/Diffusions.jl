@@ -44,10 +44,11 @@ weights = [1/8, 1/8, 1/4, 1/2]
 mus, sigs = [pi-pi/10, pi, pi/2, 0], [0.5, 0.2, 0.05, 1.0]
 ps = sum([weights[i] .* wrapped_normal_pdf.(mus[i], sigs[i], -pi:pi/240:pi) for i in 1:4])
 
-P = WrappedBrownianMotion(1.0)
-x_T = rand(Uniform(-pi, pi), 20000)
-timesteps = reverse([20 * 0.95^i for i in 0:400])
+P = WrappedBrownianDiffusion(1.0)
+x_T = rand(eq_dist(P), 20000)
+timesteps = timeschedule(exp, 0.0001, 20.0, 200)
 @time samp = samplebackward(expectation, P, timesteps, x_T)
 
-plot(-pi:pi/240:pi, ps)
-histogram!(samp, bins = -pi:pi/60:pi, normalize=:pdf, label = "Draws", linewidth = 0.0, xlim = (-pi, pi), alpha = 0.5)
+#We can see that the target is not perfectly matched for the circular expectation!
+plot(-pi:pi/240:pi, ps, label = "Target")
+histogram!(samp, bins = -pi:pi/90:pi, normalize=:pdf, label = "Draws", linewidth = 0.0, xlim = (-pi, pi), alpha = 0.5)

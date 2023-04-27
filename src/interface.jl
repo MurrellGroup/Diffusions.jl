@@ -5,14 +5,28 @@ Draw samples forward (i.e., diffuse).
 
 # Arguments
 - `process`: a diffusion process (e.g., an `OrnsteinUhlenbeckDiffusion` process)
-- `t`: a taregt time
+- `t`: a target time, or a vector of target times matching the batch (ie. last) dim of x
 - `x`: data points at time 0
 """
 sampleforward(process, t, x) = sampleforward(Random.default_rng(), process, t, x)
 
-sampleforward(rng::AbstractRNG, process, t::Real, x) = sampleforward.(rng, process, t, x)
-sampleforward(rng::AbstractRNG, process::Process, t::Real, x) = sample(rng, forward(process, x, 0, t))
+sampleforward(rng::AbstractRNG, process, t::Union{Real, AbstractVector{<: Real}}, x) = sampleforward.(rng, process, (t,), x)
+sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x) = sample(rng, forward(process, x, 0, t))
 
+function sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x::MaskedArray)
+    x = copy(x)
+    maskedvec(x) .= sampleforward(rng, process, t, maskedvec(x))
+    return x
+end
+
+function sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x)
+    d = ndims(x)
+    x_t = similar(x)
+    for i in axes(x, d)
+        selectdim(x_t, d, i) .= sampleforward(rng, process, t[i], selectdim(x, d, i))
+    end
+    return x_t
+end
 
 """
     samplebackward(guess, process, timesteps, x)
@@ -32,12 +46,11 @@ function samplebackward(rng::AbstractRNG, guess, process, timesteps, x; tracker 
     checktimesteps(timesteps)
     i = lastindex(timesteps)
     t = timesteps[i]
-    track!(tracker, t, x)
     while i > firstindex(timesteps)
         s = timesteps[i-1]
         x_0 = guess(x, t)
         x = endpoint_conditioned_sample(rng, process, s, t, x_0, x)
-        track!(tracker, s, x)
+        track!(tracker, s, x, x_0)
         t = s
         i -= 1
     end
@@ -51,6 +64,14 @@ function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real
     return sample(rng, combine(prior, likelihood))
 end
 
+function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real, t::Real, x_0::MaskedArray, x_t::MaskedArray)
+    prior = forward(process, maskedvec(x_0), 0, s)
+    likelihood = backward(process, maskedvec(x_t), s, t)
+    x = copy(x_t)
+    maskedvec(x) .= sample(rng, combine(prior, likelihood))
+    return x
+end
+
 endpoint_conditioned_sample(rng::AbstractRNG, process, s::Real, t::Real, x_0, x_t) =
     endpoint_conditioned_sample.(rng, process, s, t, x_0, x_t)
 
@@ -58,6 +79,6 @@ endpoint_conditioned_sample(P::Process, s::Real, t::Real, x_0, x_t) = endpoint_c
 
 function checktimesteps(timesteps)
     length(timesteps) ≥ 2 || throw(ArgumentError("timesteps must have at least two timesteps"))
-    issorted(timesteps) || throw(ArgumentError("timesteps must be decreasing"))
+    issorted(timesteps) || throw(ArgumentError("timesteps must be increasing"))
     all(>(0), timesteps) || throw(ArgumentError("all timesteps must be positive"))
 end

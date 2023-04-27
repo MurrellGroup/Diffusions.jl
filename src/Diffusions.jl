@@ -1,25 +1,27 @@
 module Diffusions
     using Distributions
     using LinearAlgebra
-    using StatsBase
     using OneHotArrays: onehotbatch
     using Random: Random, AbstractRNG
     using Rotations
     using Quaternions
+    using InverseFunctions: inverse, square
+    using StaticArrays: SVector
+    using NNlib: logsoftmax
 
     include("types.jl")
     include("randomvariable.jl")
     include("continuous.jl")
     include("discrete.jl")
     include("angles.jl")
-    include("tractables.jl")
     include("JC.jl")
     include("rotational.jl")
-    include("denoiser.jl")
     include("tracker.jl")
     include("utils.jl")
     include("randomfourierfeatures.jl")
+    include("maskedarrays.jl")
     include("interface.jl")
+    include("loss.jl")
 
     export
         #Processes
@@ -36,10 +38,16 @@ module Diffusions
         eq_dist,
         #utils
         randcat,
-        rotation_features,
         RandomFourierFeatures,
-        sqrt_schedule,
-        log_schedule,
-        reangle
+        timeschedule,
+        square,
+        Tracker,
+        reangle,
+        standardloss,
+        rots2flatquats,
+        bcds2flatquats,
+        bcds2rots,
+        flatquats2rots
+
 
 end

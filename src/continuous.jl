@@ -7,9 +7,11 @@ end
 
 OrnsteinUhlenbeckDiffusion(mean::Real, volatility::Real, reversion::Real) = OrnsteinUhlenbeckDiffusion(float.(promote(mean, volatility, reversion))...)
 
+OrnsteinUhlenbeckDiffusion(mean::T) where T <: Real = OrnsteinUhlenbeckDiffusion(mean,T(1.0),T(0.5))
+
 var(model::OrnsteinUhlenbeckDiffusion) = (model.volatility^2) / (2 * model.reversion)
 
-eq_dist(model::OrnsteinUhlenbeckDiffusion) = Normal(model.mean,var(model))
+eq_dist(model::OrnsteinUhlenbeckDiffusion) = Normal(model.mean,sqrt(var(model)))
 
 function forward(process::OrnsteinUhlenbeckDiffusion, x_s::AbstractArray, s::Real, t::Real)
     μ, σ, θ = process.mean, process.volatility, process.reversion

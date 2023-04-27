@@ -1,6 +1,20 @@
-struct UniformDiscreteDiffusion{T <: Real} <: SimulationProcess
+struct UniformDiscreteDiffusion{T <: Real} <: SamplingProcess
     rate::T
     k::Int
+end
+
+"""
+    UniformDiscreteDiffusion(r::Real, k::Integer)
+
+Create a discrete diffusion process with uniform jumps.
+
+This process is a special case of [`IndependentDiscreteDiffusion`](@ref) with
+the same rate `r` and `π = ones(k) / k`, but this is faster especially if `k` is
+large because sampling can be performed in constant time.
+"""
+function UniformDiscreteDiffusion(r::Real, k::Integer)
+    r = float(r)
+    return UniformDiscreteDiffusion{typeof(r)}(r, k)
 end
 
 eq_dist(P::UniformDiscreteDiffusion) = Categorical(P.k)
