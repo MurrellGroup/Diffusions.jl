@@ -1,10 +1,10 @@
-struct MaskedArray{T, A <: AbstractArray, N} <: AbstractArray{T, N}
+struct MaskedArray{T, N, A <: AbstractArray, I <: AbstractVector{<: Integer}} <: AbstractArray{T, N}
     data::A
-    indices::Vector{Int}
+    indices::I
 
-    function MaskedArray(data::AbstractArray{T, N}, indices::Vector{Int}) where {T, N}
+    function MaskedArray(data::AbstractArray{T, N}, indices::AbstractVector{<: Integer}) where {T, N}
         # TODO: check integrity of indices (sorted, not duplicated, and more?)
-        return new{T, typeof(data), N}(data, indices)
+        return new{T, N, typeof(data), typeof(indices)}(data, indices)
     end
 end
 
@@ -16,6 +16,8 @@ function Base.setindex!(A::MaskedArray, val, i...)
     A.data[i...] = val
     return A
 end
+
+Adapt.adapt_structure(to, A::MaskedArray) = MaskedArray(Adapt.adapt(to, A.data), Adapt.adapt(to, A.indices))
 
 """
     namsked(A)

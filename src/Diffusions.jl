@@ -8,6 +8,7 @@ module Diffusions
     using InverseFunctions: inverse, square
     using StaticArrays: SVector
     using NNlib: logsoftmax
+    using Adapt: Adapt
 
     include("types.jl")
     include("randomvariable.jl")
