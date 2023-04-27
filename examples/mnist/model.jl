@@ -2,27 +2,14 @@
 # https://github.com/FluxML/model-zoo/tree/master/vision/diffusion_mnist
 # The license is MIT: https://github.com/FluxML/model-zoo/blob/master/LICENSE.md
 
+using Diffusions: RandomFourierFeatures
 using Flux
 using Flux: @functor
 using MLUtils: flatten
+using Optimisers: Optimisers
 
-"""
-Projection of Gaussian Noise onto a time vector.
-# Notes
-This layer will help embed our random times onto the frequency domain. \n
-W is not trainable and is sampled once upon construction - see assertions below.
-# References
-paper-  https://arxiv.org/abs/2006.10739
-"""
-function GaussianFourierProjection(embed_dim, scale)
-    # Instantiate W once
-    W = randn(Float32, embed_dim ÷ 2) .* scale
-    # Return a function that always references the same W
-    function (t)
-        t_proj = t' .* W * Float32(2π)
-        return [sin.(t_proj); cos.(t_proj)]
-    end
-end
+@functor RandomFourierFeatures
+Optimisers.trainable(::RandomFourierFeatures) = (;)  # no trainable parameters
 
 """
 Create a UNet architecture as a backbone to a diffusion model. \n
@@ -43,34 +30,35 @@ User Facing API for UNet architecture.
 """
 function UNet(c, channels=[32, 64, 128, 256], embed_dim=256, scale=30.0f0)
     k = 10  # number of classes
+    bias = false
     return UNet((
-        gaussfourierproj=GaussianFourierProjection(embed_dim, scale),
-        labelproj=Dense(k, embed_dim),
+        gaussfourierproj=RandomFourierFeatures(embed_dim, scale),
+        labelproj=Embedding(k, embed_dim),
         linear=Dense(embed_dim, embed_dim, swish),
         # Encoding
-        conv1=Conv((3, 3), c => channels[1], stride=1, pad=1, bias=false),
+        conv1=Conv((3, 3), c => channels[1], stride=1, pad=1; bias),
         dense1=Dense(embed_dim, channels[1]),
         gnorm1=GroupNorm(channels[1], 4, swish),
-        conv2=Conv((3, 3), channels[1] => channels[2], stride=2, pad=1, bias=false),
+        conv2=Conv((3, 3), channels[1] => channels[2], stride=2, pad=1; bias),
         dense2=Dense(embed_dim, channels[2]),
         gnorm2=GroupNorm(channels[2], 32, swish),
-        conv3=Conv((3, 3), channels[2] => channels[3], stride=2, pad=1, bias=false),
+        conv3=Conv((3, 3), channels[2] => channels[3], stride=2, pad=1; bias),
         dense3=Dense(embed_dim, channels[3]),
         gnorm3=GroupNorm(channels[3], 32, swish),
-        conv4=Conv((3, 3), channels[3] => channels[4], stride=2, pad=1, bias=false),
+        conv4=Conv((3, 3), channels[3] => channels[4], stride=2, pad=1; bias),
         dense4=Dense(embed_dim, channels[4]),
         gnorm4=GroupNorm(channels[4], 32, swish),
         # Decoding
-        tconv4=ConvTranspose((3, 3), channels[4] => channels[3], stride=2, pad=1, bias=false),
+        tconv4=ConvTranspose((3, 3), channels[4] => channels[3], stride=2, pad=1; bias),
         dense5=Dense(embed_dim, channels[3]),
         tgnorm4=GroupNorm(channels[3], 32, swish),
-        tconv3=ConvTranspose((3, 3), channels[3] + channels[3] => channels[2], pad=(1, 0, 1, 0), stride=2, bias=false),
+        tconv3=ConvTranspose((3, 3), channels[3] + channels[3] => channels[2], pad=(1, 0, 1, 0), stride=2; bias),
         dense6=Dense(embed_dim, channels[2]),
         tgnorm3=GroupNorm(channels[2], 32, swish),
-        tconv2=ConvTranspose((3, 3), channels[2] + channels[2] => channels[1], pad=(1, 0, 1, 0), stride=2, bias=false),
+        tconv2=ConvTranspose((3, 3), channels[2] + channels[2] => channels[1], pad=(1, 0, 1, 0), stride=2; bias),
         dense7=Dense(embed_dim, channels[1]),
         tgnorm2=GroupNorm(channels[1], 32, swish),
-        tconv1=ConvTranspose((3, 3), channels[1] + channels[1] => 1, stride=1, pad=1, bias=false),
+        tconv1=ConvTranspose((3, 3), channels[1] + channels[1] => 1, stride=1, pad=1; bias),
         # Classification
         maxpool=GlobalMaxPool(),
         class=Dense(channels[4] => k, bias=false),
@@ -109,7 +97,7 @@ function (unet::UNet)(x, y, t)
     h = unet.layers.tconv1(cat(h, h1; dims=3))
     # Classification
     logits = unet.layers.class(flatten(unet.layers.maxpool(h4)))
-    return h, logits
+    return sigmoid.(h), logits
 end
 
 """

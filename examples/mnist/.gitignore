@@ -1,2 +1,3 @@
 *.bson
 *.log
+/tmp

@@ -29,7 +29,7 @@ elseif lowercase(ARGS[1]) == "fashionmnist"
 else
     error("the dataset name must be MNIST or FashionMNIST")
 end
-preprocess((x, y)) = reshape(x, 28, 28, 1, :), onehotbatch(y, 0:9)
+preprocess((x, y)) = reshape(x, 28, 28, 1, :), y .+ 1
 xtrain, ytrain = preprocess(dataset(:train)[:])
 xtest, ytest = preprocess(dataset(:test)[:])
 dataloader_train = DataLoader((xtrain, ytrain); batchsize)
@@ -45,49 +45,40 @@ model = device(model)
 state = device(state)
 
 # Diffusion scheduling
-p = ones(Float32, 10) ./ 10  # equilibrium distribution
 θ = 4.0f0  # reversion
 σ = √(2θ)  # volatility
-diffusion = (OrnsteinUhlenbeckDiffusion(0, σ, θ), IndependentDiscreteDiffusion(0.5f0, p))
+diffusion = (OrnsteinUhlenbeckDiffusion(0, σ, θ), UniformDiscreteDiffusion(0.5f0, 10))
 
 t_min = 1f-4
 t_max = 1f+1
-sampletime() = Float32(exp(rand(Uniform(log(t_min), log(t_max)))))
+sampletime(n) = Float32.(exp.(rand(Uniform(log(t_min), log(t_max)), n)))
 
 # Diffuse a batch of images and labels up to random times
 function diffuse(x, y)
-    n = size(x, 4)
-    diffused = (x = similar(x), y = similar(y), t = zeros(Float32, n))
-    for i in 1:n
-        time = sampletime()
-        diffused.t[i] = time
-        diffused.x[:,:,:,i], diffused.y[:,i] =
-            sampleforward(diffusion, time, (x[:,:,:,i], y[:,i]))
+    t = sampletime(size(x, 4))
+    x, y = sampleforward(diffusion, t, (x, y))
+    x, y, t = device((x, y, t))
+    if self_conditioned
+        x_0, _ = model(cat(x, zero(x), dims = 3), y, t)
+        # nullify images with 50% probability
+        x_0[:,:,:,rand(size(x_0, 4)) .< 0.5] .= 0
+        x = cat(x, x_0, dims = 3)
     end
-    return diffused
+    return (;x, y, t)
 end
 
-function f(model, diffused)
-    x = diffused.x
-    x_0, _ = model(cat(x, zero(x), dims = 3), diffused.y, diffused.t)
-    x_0 = sigmoid.(x_0)
-    x_0[:,:,:,rand(size(x_0, 4)) .< 0.5] .= 0  # nullify images with 50% probability
-    return (x = cat(x, x_0, dims = 3), y = diffused.y, t = diffused.t)
-end
+onehotlabel(y) = onehotbatch(y, 1:10)
 
 starttime = now()
 for epoch in 1:n_epochs
     loss_train = 0.0
     for (x, y) in dataloader_train
         diffused = diffuse(x, y)
-        x, y, diffused = device((x, y, diffused))
-        if self_conditioned
-            diffused = f(model, diffused)
-        end
+        x, y = device((x, y))
         loss, grads = Flux.withgradient(model) do model
             x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
-            reconst = mse(sigmoid.(x̂), x)
-            class = logitcrossentropy(ŷ, y)
+            reconst = mse(x̂, x)
+            class = logitcrossentropy(ŷ, onehotlabel(y))
             return reconst + λ * class
         end
         Optimisers.update!(state, model, grads[1])
@@ -98,13 +89,10 @@ for epoch in 1:n_epochs
     loss_reconst = loss_class = 0.0
     for (x, y) in dataloader_test
         diffused = diffuse(x, y)
-        x, y, diffused = device((x, y, diffused))
-        if self_conditioned
-            diffused = f(model, diffused)
-        end
+        x, y = device((x, y))
         x̂, ŷ = model(diffused.x, diffused.y, diffused.t)
-        loss_reconst += mse(sigmoid.(x̂), x)
-        loss_class += logitcrossentropy(ŷ, y)
+        loss_reconst += mse(x̂, x)
+        loss_class += logitcrossentropy(ŷ, onehotlabel(y))
     end
     loss_reconst /= length(dataloader_test)
     loss_class /= length(dataloader_test)
