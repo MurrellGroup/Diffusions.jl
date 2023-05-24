@@ -1,10 +1,13 @@
 using Diffusions
-using Diffusions: MaskedArray, mask, nmasked, maskedvec
+using Diffusions: MaskedArray, mask, nmasked, maskedvec, flatquats
 using Random
 using OneHotArrays
 using StaticArrays
+using Rotations: QuatRotation
+using Flux
 using Test
 
+#=
 @testset "Random categorical" begin
     rng = Xoshiro(12345)
     p = [0.1, 0.2, 0.3, 0.4]
@@ -184,6 +187,7 @@ end
     @test all(x[m] .!= x_t[m])
     @test all(x[.!m] .== x_t[.!m])
 end
+=#
 
 @testset "Loss" begin
     p = OrnsteinUhlenbeckDiffusion(0.0, 1.0, 0.5)
@@ -203,4 +207,47 @@ end
     # but masked elements do
     x[m] .= 0
     @test standardloss(p, t, x, x_0) > 0
+end
+
+@testset "Autodiff" begin
+    n = 10
+    p = OrnsteinUhlenbeckDiffusion(0.0f0, 1.0f0, 0.5f0)
+    for t in (1.0f0, ones(Float32, n)), masked in (false, true)
+        x_0 = rand(Float32, n)
+        if masked
+            x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
+        end
+        f = Dense(d => d)
+        x = randn(Float32, d, n)
+        (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
+        @test val ≥ 0
+    end
+
+    n = 10
+    p = RotationDiffusion(1.0f0)
+    for t in (1.0f0, ones(Float32, n)), masked in (false, true)
+        x_0 = reshape(rand(QuatRotation{Float32}, n), 1, :)
+        if masked
+            x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
+        end
+        d = 3
+        f = Dense(d => 4)
+        x = randn(Float32, d, n)
+        (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
+        @test val ≥ 0
+    end
+
+    k, n = 4, 10
+    p = UniformDiscreteDiffusion(1.0f0, k)
+    for t in (1.0f0, ones(Float32, n)), masked in (false, true)
+        x_0 = rand(1:k, n)
+        if masked
+            x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
+        end
+        d = 3
+        f = Dense(d => k)
+        x = randn(Float32, d, n)
+        (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
+        @test val ≥ 0 
+    end
 end

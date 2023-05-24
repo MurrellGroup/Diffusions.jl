@@ -26,29 +26,41 @@ scalebatch(A::AbstractArray, s::AbstractVector{<: Real}) =
 scaledloss(loss, x̂, x::MaskedArray, s) = mean(scalebatch(loss(x̂, x.data), s)[x.indices])
 scaledloss(loss, x̂, x::AbstractArray, s) = mean(scalebatch(loss(x̂, x), s))
 
+flatgetindex(x, indices) = stack([x[indices] for x in eachslice(x, dims=1)], dims=1)
+
+maskedindices(x::MaskedArray) = x.indices
+maskedindices(x::AbstractArray) = eachindex(x)
+
+scale(scaler::Function, p, t::Real, x, indices) = scaler(p, t)
+function scale(scaler::Function, p, t::AbstractVector{<:Real}, x, indices)
+    c = CartesianIndices(x)
+    return [scaler(p, t[c[i][ndims(x)]]) for i in indices]
+end
+
 
 defaultscaler(p::OrnsteinUhlenbeckDiffusion, t::Real) = sqrt(1 - exp(-t * p.reversion))
 
 function standardloss(
     p::OrnsteinUhlenbeckDiffusion,
-    t::Union{Real, AbstractVector{<: Real}},
+    t::Union{Real,AbstractVector{<:Real}},
     x̂, x;
-    scaler = defaultscaler
-)
-    loss(x̂, x) = abs2.(x̂ .- x)
-    return scaledloss(loss, x̂, x, scaler.(p, t))
+    scaler=defaultscaler)
+    loss(x̂, x, s) = mean(vec(abs2.(x̂ .- x)) ./ s)
+    flatten(x) = reshape(x, 1, :)
+    i = maskedindices(x)
+    return loss(flatgetindex(flatten(x̂), i), flatgetindex(flatten(parent(x)), i), scale(scaler, p, t, x, i))
 end
 
 defaultscaler(p::RotationDiffusion, t::Real) = sqrt(1 - exp(-t * p.rate * 5))
 
 function standardloss(
     p::RotationDiffusion,
-    t::Union{Real, AbstractVector{<: Real}},
+    t::Union{Real,AbstractVector{<:Real}},
     x̂, x;
-    scaler = defaultscaler
-)
-    loss(x̂, x) = rotang.(abs.(sum(x̂ .* x, dims = 1)))
-    return scaledloss(loss, x̂, x, scaler.(p, t)) / size(x, 1)
+    scaler=defaultscaler)
+    loss(x̂, x, s) = mean(vec(rotang.(abs.(sum(x̂ .* x, dims=1)))) ./ s)
+    i = maskedindices(x)
+    return loss(flatgetindex(flatten(x̂), i), flatgetindex(flatquats(parent(x)), i), scale(scaler, p, t, x, i)) / 4
 end
 
 rotang(x) = 1//18 * (1 - x) * (x - 13)^2
@@ -76,12 +88,13 @@ defaultscaler(p::UniformDiscreteDiffusion, t::Real) = sqrt(1 - exp(-t * p.rate))
 
 function standardloss(
     p::UniformDiscreteDiffusion,
-    t::Union{Real, AbstractVector{<: Real}},
+    t::Union{Real,AbstractVector{<:Real}},
     x̂, x;
-    scaler = defaultscaler
+    scaler=defaultscaler
 )
-    loss(x̂, x) = logitcrossentropy(x̂, x)
-    return scaledloss(loss, x̂, x, scaler.(p, t)) / ((p.k - 1) / p.k) * 1.44f0
+    loss(x̂, x, s) = mean(vec(logitcrossentropy(x̂, x)) ./ s) / ((p.k - 1) / p.k) * 1.44f0
+    i = maskedindices(x)
+    return loss(flatgetindex(flatten(x̂), i), flatgetindex(onehotbatch(parent(x), 1:p.k), i), scale(scaler, p, t, x, i))
 end
 
 logitcrossentropy(x̂, x; dims = 1) = -sum(x .* logsoftmax(x̂; dims); dims)

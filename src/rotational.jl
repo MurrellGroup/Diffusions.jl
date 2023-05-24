@@ -66,3 +66,8 @@ end
 #Need these to work when there is a batch dim
 flatquats2rots(flat::Array{<: Real, 2}) = [QuatRotation(c) for c in eachcol(flat)]
 bcds2rots(bcd::Array{<: Real, 2}) = flatquats2rots(bcds2flatquats(bcd))
+
+function flatquats(x)
+    vec(q) = (q.s, q.v1, q.v2, q.v3)
+    return stack(map(r -> vec(r.q), x))
+end
