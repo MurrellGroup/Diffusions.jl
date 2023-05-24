@@ -19,7 +19,7 @@ end
 
 eq_dist(P::UniformDiscreteDiffusion) = Categorical(P.k)
 
-function sampleforward(rng::AbstractRNG, P::UniformDiscreteDiffusion, t::Real, X0)
+function sampleforward(rng::AbstractRNG, P::UniformDiscreteDiffusion, t::Real, X0::AbstractArray)
     Xt = copy(X0)
     event = 1-exp(-t*P.rate)
     for i in eachindex(Xt)

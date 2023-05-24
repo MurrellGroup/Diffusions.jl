@@ -10,22 +10,29 @@ Draw samples forward (i.e., diffuse).
 """
 sampleforward(process, t, x) = sampleforward(Random.default_rng(), process, t, x)
 
-sampleforward(rng::AbstractRNG, process, t::Union{Real, AbstractVector{<: Real}}, x) = sampleforward.(rng, process, (t,), x)
-sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x) = sample(rng, forward(process, x, 0, t))
+sampleforward(
+    rng::AbstractRNG,
+    process::NTuple{N, Process},
+    t::Union{Real, AbstractVector{<: Real}},
+    x::NTuple{N, AbstractArray}
+) where N = sampleforward.(rng, process, (t,), x)
 
-function sampleforward(rng::AbstractRNG, process::TractableProcess, t::Real, x::MaskedArray)
-    x = copy(x)
-    maskedvec(x) .= sampleforward(rng, process, t, maskedvec(x))
-    return x
-end
+sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x::AbstractVector) =
+    sampleforward(rng, process, t, x')'
 
-function sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x)
+function sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x::AbstractArray)
     d = ndims(x)
     x_t = similar(x)
     for i in axes(x, d)
         selectdim(x_t, d, i) .= sampleforward(rng, process, t[i], selectdim(x, d, i))
     end
     return x_t
+end
+
+function sampleforward(rng::AbstractRNG, process::Process, t::Real, x::MaskedArray)
+    x = copy(x)
+    maskedvec(x) .= sampleforward(rng, process, t, maskedvec(x))
+    return x
 end
 
 """

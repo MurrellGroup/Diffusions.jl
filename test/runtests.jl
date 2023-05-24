@@ -36,7 +36,13 @@ end
     @test x_t isa typeof(x_0)
     @test size(x_t) == size(x_0)
 
-    # batched 2d diffusion 
+    # batched 3d diffusion
+    x_0 = randn(3)
+    x_t = sampleforward(diffusion, [1.0, 2.0, 3.0], x_0)
+    @test x_t isa typeof(x_0)
+    @test size(x_t) == size(x_0)
+
+    # batched 2x3 diffusion 
     x_0 = randn(2, 3)
     x_t = sampleforward(diffusion, [1.0, 2.0, 3.0], x_0)
     @test x_t isa typeof(x_0)

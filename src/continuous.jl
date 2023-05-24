@@ -28,3 +28,6 @@ function backward(process::OrnsteinUhlenbeckDiffusion, x_t::AbstractArray, s::Re
     var .= -(σ^2 / 2θ) + (σ^2 * exp(2(t - s) * θ)) / 2θ
     return (μ = mean, σ² = var)
 end
+
+sampleforward(rng::AbstractRNG, process::Process, t::Real, x::AbstractArray) =
+    sample(rng, forward(process, x, 0, t))
