@@ -213,11 +213,12 @@ end
     n = 10
     p = OrnsteinUhlenbeckDiffusion(0.0f0, 1.0f0, 0.5f0)
     for t in (1.0f0, ones(Float32, n)), masked in (false, true)
-        x_0 = rand(Float32, n)
+        x_0 = rand(Float32, 1, n)
         if masked
             x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
         end
-        f = Dense(d => d)
+        d = 3
+        f = Dense(d => 1)
         x = randn(Float32, d, n)
         (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
         @test val ≥ 0
@@ -226,7 +227,7 @@ end
     n = 10
     p = RotationDiffusion(1.0f0)
     for t in (1.0f0, ones(Float32, n)), masked in (false, true)
-        x_0 = reshape(rand(QuatRotation{Float32}, n), 1, :)
+        x_0 = rand(QuatRotation{Float32}, n)
         if masked
             x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
         end
