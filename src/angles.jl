@@ -55,7 +55,7 @@ function wrapped_combine_and_sample(rng::AbstractRNG, P::WrappedInterpolatedBrow
     return reangle(B + dir * shortestdist * (var / (var + back_var)))
 end
 
-sampleforward(rng::AbstractRNG, P::WrappedDiffusion{T}, t::Real, X) where T = X .+ reangle.(randn(rng, T, size(X)) .* sqrt(t*P.rate))
+sampleforward(rng::AbstractRNG, P::WrappedDiffusion{T}, t::Real, X::AbstractArray) where T = X .+ reangle.(randn(rng, T, size(X)) .* sqrt(t*P.rate))
 
 endpoint_conditioned_sample(rng::AbstractRNG, P::WrappedDiffusion, s::Real, t::Real, x_0, x_t) =
     wrapped_combine_and_sample.(rng, P, x_0, P.rate * s, x_t, P.rate * (t - s))

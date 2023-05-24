@@ -38,7 +38,7 @@ end
 
 RotationDiffusion() = RotationDiffusion(1.0)
 
-sampleforward(rng::AbstractRNG, process::RotationDiffusion, t::Real, x) =
+sampleforward(rng::AbstractRNG, process::RotationDiffusion, t::Real, x::AbstractArray) =
     rotation_diffuse.(rng, x, t * process.rate)
 
 endpoint_conditioned_sample(rng::AbstractRNG, process::RotationDiffusion, s::Real, t::Real, x_0, x_t) =
