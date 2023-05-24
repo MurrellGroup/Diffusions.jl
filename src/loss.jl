@@ -108,6 +108,7 @@ function standardloss(
     x̂, x;
     scaler = defaultscaler
 ) where K
-    loss(x̂, x) = logitcrossentropy(x̂, x)
-    return scaledloss(loss, x̂, x, scaler.(p, t)) / ((K - 1) / K) * 1.44f0
+    loss(x̂, x, s) = mean(vec(logitcrossentropy(x̂, x)) ./ s) / ((K - 1) / K) * 1.44f0
+    i = maskedindices(x)
+    return loss(flatgetindex(flatten(x̂), i), flatgetindex(stack(parent(x), dims = 2), i), scale(scaler, p, t, x, i))
 end

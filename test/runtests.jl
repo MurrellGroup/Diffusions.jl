@@ -251,4 +251,18 @@ end
         (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
         @test val ≥ 0 
     end
+
+    k, n = 4, 10
+    p = IndependentDiscreteDiffusion(1.0f0, ones(SVector{k, Float32}))
+    for t in (1.0f0, ones(Float32, n)), masked in (false, true)
+        x_0 = [Diffusions.onehotsvec(k, rand(1:k)) for _ in 1:n]
+        if masked
+            x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
+        end
+        d = 3
+        f = Dense(d => k)
+        x = randn(Float32, d, n)
+        (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
+        @test val ≥ 0
+    end
 end
