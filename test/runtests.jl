@@ -1,5 +1,5 @@
 using Diffusions
-using Diffusions: MaskedArray, mask, nmasked, maskedvec, flatquats
+using Diffusions: MaskedArray, mask, nmasked, maskedvec
 using Random
 using OneHotArrays
 using StaticArrays
