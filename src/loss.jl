@@ -74,8 +74,10 @@ function standardloss(
     x̂, x;
     scaler = defaultscaler
 )
-    loss(x̂, x) = abs2.(minang.(x̂, x))
-    return scaledloss(loss, x̂, x, scaler.(p, t))
+    loss(x̂, x, s) = mean(vec(abs2.(minang.(x̂, x))) ./ s)
+    flatten(x) = reshape(x, 1, :)
+    i = maskedindices(x)
+    return loss(flatgetindex(flatten(x̂), i), flatgetindex(flatten(parent(x)), i), scale(scaler, p, t, x, i))
 end
 
 function minang(x1, x2)
