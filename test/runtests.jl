@@ -7,7 +7,6 @@ using Rotations: QuatRotation
 using Flux
 using Test
 
-#=
 @testset "Random categorical" begin
     rng = Xoshiro(12345)
     p = [0.1, 0.2, 0.3, 0.4]
@@ -187,7 +186,6 @@ end
     @test all(x[m] .!= x_t[m])
     @test all(x[.!m] .== x_t[.!m])
 end
-=#
 
 @testset "Loss" begin
     p = OrnsteinUhlenbeckDiffusion(0.0, 1.0, 0.5)
