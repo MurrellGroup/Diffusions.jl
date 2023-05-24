@@ -17,15 +17,6 @@ rot_ang(x) = oftype(x, 1/18)*(1-x)*(x-13)^2
 #-----Playing with rotations------
 
 
-# Scale A with s along the last dimension (i.e., batch dimension)
-scalebatch(A::AbstractArray, s::Real) = A ./ s
-scalebatch(A::AbstractArray, s::AbstractVector{<: Real}) =
-    A ./ reshape(s, ntuple(i -> 1, ndims(A) - 1)..., :)
-
-# Calculate the scaled loss (`loss` is an element-wise loss function)
-scaledloss(loss, x̂, x::MaskedArray, s) = mean(scalebatch(loss(x̂, x.data), s)[x.indices])
-scaledloss(loss, x̂, x::AbstractArray, s) = mean(scalebatch(loss(x̂, x), s))
-
 flatgetindex(x, indices) = stack([x[indices] for x in eachslice(x, dims=1)], dims=1)
 
 maskedindices(x::MaskedArray) = x.indices
