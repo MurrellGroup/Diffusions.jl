@@ -16,19 +16,15 @@ rot_ang(x) = oftype(x, 1/18)*(1-x)*(x-13)^2
 #rot_ang(x) = -8(x-1) + (4/3)*(x-1)^2 - (16/45)*(x-1)^3 + (4/35)*(x-1)^4 #Longer expansion
 #-----Playing with rotations------
 
+# Scale A with s along the last dimension (i.e., batch dimension)
+scalebatch(A::AbstractArray, s::Real) = A ./ s
+scalebatch(A::AbstractArray, s::AbstractVector{<: Real}) =
+    A ./ reshape(s, ntuple(i -> 1, ndims(A) - 1)..., :)
 
-flatgetindex(x, indices) = stack([x[indices] for x in eachslice(x, dims=1)], dims=1)
+scaledloss(loss, x̂, x, i, scaler, t) =
+    mean(scalebatch(dropdims(loss(x̂, x), dims = 1), scaler.(t))[i])
 
-maskedindices(x::MaskedArray) = x.indices
-maskedindices(x::AbstractArray) = eachindex(x)
-
-scale(scaler::Function, p, t::Real, x, indices) = scaler(p, t)
-function scale(scaler::Function, p, t::AbstractVector{<:Real}, x, indices)
-    c = CartesianIndices(x)
-    return [scaler(p, t[c[i][ndims(x)]]) for i in indices]
-end
-
-
+    
 defaultscaler(p::OrnsteinUhlenbeckDiffusion, t::Real) = sqrt(1 - exp(-t * p.reversion))
 
 function standardloss(
@@ -36,10 +32,9 @@ function standardloss(
     t::Union{Real,AbstractVector{<:Real}},
     x̂, x;
     scaler=defaultscaler)
-    loss(x̂, x, s) = mean(vec(abs2.(x̂ .- x)) ./ s)
-    flatten(x) = reshape(x, 1, :)
-    i = maskedindices(x)
-    return loss(flatgetindex(flatten(x̂), i), flatgetindex(flatten(parent(x)), i), scale(scaler, p, t, x, i))
+    loss(x̂, x) = abs2.(x̂ .- x)
+    arrange(x) = reshape(x, 1, size(x)...)
+    return scaledloss(loss, arrange(x̂), arrange(parent(x)), maskedindices(x), t -> scaler(p, t), t)
 end
 
 defaultscaler(p::RotationDiffusion, t::Real) = sqrt(1 - exp(-t * p.rate * 5))
@@ -49,9 +44,8 @@ function standardloss(
     t::Union{Real,AbstractVector{<:Real}},
     x̂, x;
     scaler=defaultscaler)
-    loss(x̂, x, s) = mean(vec(rotang.(abs.(sum(x̂ .* x, dims=1)))) ./ s)
-    i = maskedindices(x)
-    return loss(flatgetindex(flatten(x̂), i), flatgetindex(flatquats(parent(x)), i), scale(scaler, p, t, x, i)) / 4
+    loss(x̂, x) = rotang.(abs.(sum(x̂ .* x, dims = 1))) / 4
+    return scaledloss(loss, x̂, flatquats(parent(x)), maskedindices(x), t -> scaler(p, t), t)
 end
 
 rotang(x) = 1//18 * (1 - x) * (x - 13)^2
@@ -65,10 +59,9 @@ function standardloss(
     x̂, x;
     scaler = defaultscaler
 )
-    loss(x̂, x, s) = mean(vec(abs2.(minang.(x̂, x))) ./ s)
-    flatten(x) = reshape(x, 1, :)
-    i = maskedindices(x)
-    return loss(flatgetindex(flatten(x̂), i), flatgetindex(flatten(parent(x)), i), scale(scaler, p, t, x, i))
+    loss(x̂, x) = abs2.(minang.(x̂, x))
+    arrange(x) = reshape(x, 1, size(x)...)
+    return scaledloss(loss, arrange(x̂), arrange(parent(x)), maskedindices(x), t -> scaler(p, t), t)
 end
 
 function minang(x1, x2)
@@ -85,9 +78,9 @@ function standardloss(
     x̂, x;
     scaler=defaultscaler
 )
-    loss(x̂, x, s) = mean(vec(logitcrossentropy(x̂, x)) ./ s) / ((p.k - 1) / p.k) * 1.44f0
-    i = maskedindices(x)
-    return loss(flatgetindex(flatten(x̂), i), flatgetindex(onehotbatch(parent(x), 1:p.k), i), scale(scaler, p, t, x, i))
+    k = p.k
+    loss(x̂, x) = logitcrossentropy(x̂, x)
+    return scaledloss(loss, x̂, onehotbatch(parent(x), 1:k), maskedindices(x), t -> scaler(p, t), t) / ((k - 1) / k) * 1.44f0
 end
 
 logitcrossentropy(x̂, x; dims = 1) = -sum(x .* logsoftmax(x̂; dims); dims)
@@ -101,7 +94,6 @@ function standardloss(
     x̂, x;
     scaler = defaultscaler
 ) where K
-    loss(x̂, x, s) = mean(vec(logitcrossentropy(x̂, x)) ./ s) / ((K - 1) / K) * 1.44f0
-    i = maskedindices(x)
-    return loss(flatgetindex(flatten(x̂), i), flatgetindex(stack(parent(x), dims = 2), i), scale(scaler, p, t, x, i))
+    loss(x̂, x) = logitcrossentropy(x̂, x)
+    return scaledloss(loss, x̂, stack(parent(x), dims = 2), maskedindices(x), t -> scaler(p, t), t) / ((K - 1) / K) * 1.44f0
 end
