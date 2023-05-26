@@ -230,7 +230,7 @@ end
             x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
         end
         d = 3
-        f = Dense(d => 4)
+        f = bcds2flatquats ∘ Dense(d => 3)
         x = randn(Float32, d, n)
         (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
         @test val ≥ 0
