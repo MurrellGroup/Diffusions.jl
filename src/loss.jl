@@ -49,7 +49,7 @@ function standardloss(
     return scaledloss(loss(x̂, flatquats(parent(x))), maskedindices(x), (t -> scaler(p, t)).(t)) / 4
 end
 
-rotang(x) = 1//18 * (1 - x) * (x - 13)^2
+rotang(x) = (1 - x) * (x - 13)^2 / 18
 
 
 defaultscaler(p::WrappedDiffusion, t::Real) = 2 * sqrt(1 - exp(-t * p.rate / 8))
