@@ -68,6 +68,9 @@ flatquats2rots(flat::Array{<: Real, 2}) = [QuatRotation(c) for c in eachcol(flat
 bcds2rots(bcd::Array{<: Real, 2}) = flatquats2rots(bcds2flatquats(bcd))
 
 function flatquats(x)
-    vec(q) = (q.s, q.v1, q.v2, q.v3)
-    return stack(map(r -> vec(r.q), x))
+    s(r) = r.q.s
+    v1(r) = r.q.v1
+    v2(r) = r.q.v2
+    v3(r) = r.q.v3
+    return stack([s.(x), v1.(x), v2.(x), v3.(x)], dims = 1)
 end
