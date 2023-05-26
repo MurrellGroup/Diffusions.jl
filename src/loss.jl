@@ -21,10 +21,11 @@ scalebatch(A::AbstractArray, s::Real) = A ./ s
 scalebatch(A::AbstractArray, s::AbstractVector{<: Real}) =
     A ./ reshape(s, ntuple(i -> 1, ndims(A) - 1)..., :)
 
-scaledloss(loss, x̂, x, i, scaler, t) =
-    mean(scalebatch(dropdims(loss(x̂, x), dims = 1), scaler.(t))[i])
+scaledloss(loss, indices, s) = mean(scalebatch(loss, s)[indices])
 
-    
+maskedindices(x::MaskedArray) = x.indices
+maskedindices(x::AbstractArray) = eachindex(x)
+
 defaultscaler(p::OrnsteinUhlenbeckDiffusion, t::Real) = sqrt(1 - exp(-t * p.reversion))
 
 function standardloss(
@@ -33,8 +34,8 @@ function standardloss(
     x̂, x;
     scaler=defaultscaler)
     loss(x̂, x) = abs2.(x̂ .- x)
-    arrange(x) = reshape(x, 1, size(x)...)
-    return scaledloss(loss, arrange(x̂), arrange(parent(x)), maskedindices(x), t -> scaler(p, t), t)
+    # ugly syntax but scaler.(p, t) is not differentiable with Zygote.jl for some reason
+    return scaledloss(loss(x̂, parent(x)), maskedindices(x), (t -> scaler(p, t)).(t))
 end
 
 defaultscaler(p::RotationDiffusion, t::Real) = sqrt(1 - exp(-t * p.rate * 5))
@@ -44,8 +45,8 @@ function standardloss(
     t::Union{Real,AbstractVector{<:Real}},
     x̂, x;
     scaler=defaultscaler)
-    loss(x̂, x) = rotang.(abs.(sum(x̂ .* x, dims = 1))) / 4
-    return scaledloss(loss, x̂, flatquats(parent(x)), maskedindices(x), t -> scaler(p, t), t)
+    loss(x̂, x) = rotang.(abs.(dropdims(sum(x̂ .* x, dims = 1), dims = 1)))
+    return scaledloss(loss(x̂, flatquats(parent(x))), maskedindices(x), (t -> scaler(p, t)).(t)) / 4
 end
 
 rotang(x) = 1//18 * (1 - x) * (x - 13)^2
@@ -60,8 +61,7 @@ function standardloss(
     scaler = defaultscaler
 )
     loss(x̂, x) = abs2.(minang.(x̂, x))
-    arrange(x) = reshape(x, 1, size(x)...)
-    return scaledloss(loss, arrange(x̂), arrange(parent(x)), maskedindices(x), t -> scaler(p, t), t)
+    return scaledloss(loss(x̂, parent(x)), maskedindices(x), (t -> scaler(p, t)).(t))
 end
 
 function minang(x1, x2)
@@ -79,8 +79,8 @@ function standardloss(
     scaler=defaultscaler
 )
     k = p.k
-    loss(x̂, x) = logitcrossentropy(x̂, x)
-    return scaledloss(loss, x̂, onehotbatch(parent(x), 1:k), maskedindices(x), t -> scaler(p, t), t) / ((k - 1) / k) * 1.44f0
+    loss(x̂, x) = dropdims(logitcrossentropy(x̂, x), dims = 1)
+    return scaledloss(loss(x̂, onehotbatch(parent(x), 1:k)), maskedindices(x), (t -> scaler(p, t)).(t)) / ((k - 1) / k) * 1.44f0
 end
 
 logitcrossentropy(x̂, x; dims = 1) = -sum(x .* logsoftmax(x̂; dims); dims)
@@ -94,6 +94,6 @@ function standardloss(
     x̂, x;
     scaler = defaultscaler
 ) where K
-    loss(x̂, x) = logitcrossentropy(x̂, x)
-    return scaledloss(loss, x̂, stack(parent(x), dims = 2), maskedindices(x), t -> scaler(p, t), t) / ((K - 1) / K) * 1.44f0
+    loss(x̂, x) = dropdims(logitcrossentropy(x̂, x), dims = 1)
+    return scaledloss(loss(x̂, stack(parent(x), dims = 2)), maskedindices(x), (t -> scaler(p, t)).(t)) / ((K - 1) / K) * 1.44f0
 end
