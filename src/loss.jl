@@ -95,5 +95,7 @@ function standardloss(
     scaler = defaultscaler
 ) where K
     loss(x̂, x) = dropdims(logitcrossentropy(x̂, x), dims = 1)
-    return scaledloss(loss(x̂, stack(parent(x), dims = 2)), maskedindices(x), (t -> scaler(p, t)).(t)) / ((K - 1) / K) * 1.44f0
+    # TODO: This isn't differentiable on GPU.
+    xx = stack([getindex.(parent(x), i) for i in 1:K], dims = 1)
+    return scaledloss(loss(x̂, xx), maskedindices(x), (t -> scaler(p, t)).(t)) / ((K - 1) / K) * 1.44f0
 end
