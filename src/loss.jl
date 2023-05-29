@@ -16,42 +16,40 @@ rot_ang(x) = oftype(x, 1/18)*(1-x)*(x-13)^2
 #rot_ang(x) = -8(x-1) + (4/3)*(x-1)^2 - (16/45)*(x-1)^3 + (4/35)*(x-1)^4 #Longer expansion
 #-----Playing with rotations------
 
-
 # Scale A with s along the last dimension (i.e., batch dimension)
 scalebatch(A::AbstractArray, s::Real) = A ./ s
 scalebatch(A::AbstractArray, s::AbstractVector{<: Real}) =
     A ./ reshape(s, ntuple(i -> 1, ndims(A) - 1)..., :)
 
-# Calculate the scaled loss (`loss` is an element-wise loss function)
-scaledloss(loss, x̂, x::MaskedArray, s) = mean(scalebatch(loss(x̂, x.data), s)[x.indices])
-scaledloss(loss, x̂, x::AbstractArray, s) = mean(scalebatch(loss(x̂, x), s))
+scaledloss(loss, indices, s) = mean(scalebatch(loss, s)[indices])
 
+maskedindices(x::MaskedArray) = x.indices
+maskedindices(x::AbstractArray) = eachindex(x)
 
 defaultscaler(p::OrnsteinUhlenbeckDiffusion, t::Real) = sqrt(1 - exp(-t * p.reversion))
 
 function standardloss(
     p::OrnsteinUhlenbeckDiffusion,
-    t::Union{Real, AbstractVector{<: Real}},
+    t::Union{Real,AbstractVector{<:Real}},
     x̂, x;
-    scaler = defaultscaler
-)
+    scaler=defaultscaler)
     loss(x̂, x) = abs2.(x̂ .- x)
-    return scaledloss(loss, x̂, x, scaler.(p, t))
+    # ugly syntax but scaler.(p, t) is not differentiable with Zygote.jl for some reason
+    return scaledloss(loss(x̂, parent(x)), maskedindices(x), (t -> scaler(p, t)).(t))
 end
 
 defaultscaler(p::RotationDiffusion, t::Real) = sqrt(1 - exp(-t * p.rate * 5))
 
 function standardloss(
     p::RotationDiffusion,
-    t::Union{Real, AbstractVector{<: Real}},
+    t::Union{Real,AbstractVector{<:Real}},
     x̂, x;
-    scaler = defaultscaler
-)
-    loss(x̂, x) = rotang.(abs.(sum(x̂ .* x, dims = 1)))
-    return scaledloss(loss, x̂, x, scaler.(p, t)) / size(x, 1)
+    scaler=defaultscaler)
+    loss(x̂, x) = rotang.(abs.(dropdims(sum(x̂ .* x, dims = 1), dims = 1)))
+    return scaledloss(loss(x̂, flatquats(parent(x))), maskedindices(x), (t -> scaler(p, t)).(t)) / 4
 end
 
-rotang(x) = 1//18 * (1 - x) * (x - 13)^2
+rotang(x) = (1 - x) * (x - 13)^2 / 18
 
 
 defaultscaler(p::WrappedDiffusion, t::Real) = 2 * sqrt(1 - exp(-t * p.rate / 8))
@@ -63,7 +61,7 @@ function standardloss(
     scaler = defaultscaler
 )
     loss(x̂, x) = abs2.(minang.(x̂, x))
-    return scaledloss(loss, x̂, x, scaler.(p, t))
+    return scaledloss(loss(x̂, parent(x)), maskedindices(x), (t -> scaler(p, t)).(t))
 end
 
 function minang(x1, x2)
@@ -76,12 +74,13 @@ defaultscaler(p::UniformDiscreteDiffusion, t::Real) = sqrt(1 - exp(-t * p.rate))
 
 function standardloss(
     p::UniformDiscreteDiffusion,
-    t::Union{Real, AbstractVector{<: Real}},
+    t::Union{Real,AbstractVector{<:Real}},
     x̂, x;
-    scaler = defaultscaler
+    scaler=defaultscaler
 )
-    loss(x̂, x) = logitcrossentropy(x̂, x)
-    return scaledloss(loss, x̂, x, scaler.(p, t)) / ((p.k - 1) / p.k) * 1.44f0
+    k = p.k
+    loss(x̂, x) = dropdims(logitcrossentropy(x̂, x), dims = 1)
+    return scaledloss(loss(x̂, onehotbatch(parent(x), 1:k)), maskedindices(x), (t -> scaler(p, t)).(t)) / ((k - 1) / k) * 1.44f0
 end
 
 logitcrossentropy(x̂, x; dims = 1) = -sum(x .* logsoftmax(x̂; dims); dims)
@@ -95,6 +94,8 @@ function standardloss(
     x̂, x;
     scaler = defaultscaler
 ) where K
-    loss(x̂, x) = logitcrossentropy(x̂, x)
-    return scaledloss(loss, x̂, x, scaler.(p, t)) / ((K - 1) / K) * 1.44f0
+    loss(x̂, x) = dropdims(logitcrossentropy(x̂, x), dims = 1)
+    # TODO: This isn't differentiable on GPU.
+    xx = stack([getindex.(parent(x), i) for i in 1:K], dims = 1)
+    return scaledloss(loss(x̂, xx), maskedindices(x), (t -> scaler(p, t)).(t)) / ((K - 1) / K) * 1.44f0
 end

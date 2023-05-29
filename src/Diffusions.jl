@@ -9,6 +9,7 @@ module Diffusions
     using StaticArrays: SVector
     using NNlib: logsoftmax
     using Adapt: Adapt
+    using MLUtils: flatten
 
     include("types.jl")
     include("randomvariable.jl")

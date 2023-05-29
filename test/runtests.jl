@@ -3,6 +3,8 @@ using Diffusions: MaskedArray, mask, nmasked, maskedvec
 using Random
 using OneHotArrays
 using StaticArrays
+using Rotations: QuatRotation
+using Flux
 using Test
 
 @testset "Random categorical" begin
@@ -203,4 +205,76 @@ end
     # but masked elements do
     x[m] .= 0
     @test standardloss(p, t, x, x_0) > 0
+end
+
+@testset "Autodiff" begin
+    n = 10
+    p = OrnsteinUhlenbeckDiffusion(0.0f0, 1.0f0, 0.5f0)
+    for t in (1.0f0, ones(Float32, n)), masked in (false, true)
+        x_0 = rand(Float32, 1, n)
+        if masked
+            x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
+        end
+        d = 3
+        f = Dense(d => 1)
+        x = randn(Float32, d, n)
+        (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
+        @test val ≥ 0
+    end
+
+    n = 10
+    p = RotationDiffusion(1.0f0)
+    for t in (1.0f0, ones(Float32, n)), masked in (false, true)
+        x_0 = rand(QuatRotation{Float32}, n)
+        if masked
+            x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
+        end
+        d = 3
+        f = bcds2flatquats ∘ Dense(d => 3)
+        x = randn(Float32, d, n)
+        (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
+        @test val ≥ 0
+    end
+
+    n = 10
+    p = WrappedBrownianDiffusion(1.0f0)
+    for t in (1.0f0, ones(Float32, n)), masked in (false, true)
+        x_0 = rand(Float32, 1, n)
+        if masked
+            x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
+        end
+        d = 3
+        f = Dense(d => 1)
+        x = randn(Float32, d, n)
+        (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
+        @test val ≥ 0
+    end
+
+    k, n = 4, 10
+    p = UniformDiscreteDiffusion(1.0f0, k)
+    for t in (1.0f0, ones(Float32, n)), masked in (false, true)
+        x_0 = rand(1:k, n)
+        if masked
+            x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
+        end
+        d = 3
+        f = Dense(d => k)
+        x = randn(Float32, d, n)
+        (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
+        @test val ≥ 0 
+    end
+
+    k, n = 4, 10
+    p = IndependentDiscreteDiffusion(1.0f0, ones(SVector{k, Float32}))
+    for t in (1.0f0, ones(Float32, n)), masked in (false, true)
+        x_0 = [Diffusions.onehotsvec(k, rand(1:k)) for _ in 1:n]
+        if masked
+            x_0 = mask(x_0, rand(size(x_0)...) .< 0.5)
+        end
+        d = 3
+        f = Dense(d => k)
+        x = randn(Float32, d, n)
+        (; val, grad) = Flux.withgradient(f -> standardloss(p, t, f(x), x_0), f)
+        @test val ≥ 0
+    end
 end

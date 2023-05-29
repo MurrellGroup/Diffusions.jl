@@ -12,7 +12,7 @@ losses = []
 for t in timesteps
     xzero = [rand(QuatRotation{Float32}) for i in 1:N]
     xend = sampleforward(P, t, xzero)
-    push!(losses, standardloss(P, t, rots2flatquats(xend), rots2flatquats(xzero)))
+    push!(losses, standardloss(P, t, rots2flatquats(xend), xzero))
 end
 plot!(timesteps,losses, label = "Rotation")
 
@@ -41,6 +41,6 @@ losses = []
 for t in timesteps
     xzero = Diffusions.onehotsvec.(k, rand(eq_dist(P), N))
     xend = Diffusions.forward(P, xzero, 0.0f0, t)
-    push!(losses, standardloss(P, t, log.(stack(xend.p)), stack(xzero)))
+    push!(losses, standardloss(P, t, log.(stack(xend.p)), xzero))
 end
 plot!(timesteps, losses, xscale = :log10, yscale = :log10, label = "Discrete", legend = :topleft, xlabel = "t", ylabel = "Loss")

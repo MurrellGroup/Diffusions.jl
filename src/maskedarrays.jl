@@ -11,6 +11,7 @@ end
 Base.size(A::MaskedArray) = size(A.data)
 Base.copy(A::MaskedArray) = MaskedArray(copy(A.data), copy(A.indices))
 Base.getindex(A::MaskedArray, i...) = A.data[i...]
+Base.parent(A::MaskedArray) = A.data
 
 function Base.setindex!(A::MaskedArray, val, i...)
     A.data[i...] = val

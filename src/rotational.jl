@@ -59,10 +59,18 @@ end
 #bcd is the vector component of the quaternion that is a useful NN output.
 #bcds2flatquats will convert a 3-by-N to array of bcds to an array representation of N unit quaternions
 #This is useful for the rotationally-aware loss function to avoid actual Quaternion types
-function bcds2flatquats(bcd::Array{<: Real, 2})
+function bcds2flatquats(bcd::AbstractArray{<: Real, 2})
     denom = sqrt.(1 .+ bcd[1,:].^2 .+ bcd[2,:].^2 .+ bcd[3,:].^2)
     return vcat((1 ./ denom)', bcd ./ denom')
 end
 #Need these to work when there is a batch dim
 flatquats2rots(flat::Array{<: Real, 2}) = [QuatRotation(c) for c in eachcol(flat)]
 bcds2rots(bcd::Array{<: Real, 2}) = flatquats2rots(bcds2flatquats(bcd))
+
+function flatquats(x)
+    s(r) = r.q.s
+    v1(r) = r.q.v1
+    v2(r) = r.q.v2
+    v3(r) = r.q.v3
+    return stack([s.(x), v1.(x), v2.(x), v3.(x)], dims = 1)
+end
