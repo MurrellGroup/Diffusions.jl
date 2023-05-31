@@ -46,5 +46,5 @@ function backward(process::IndependentDiscreteDiffusion, x_t::AbstractArray, s::
     return [pow * x .+ x'c1 for x in x_t]
 end
 
-sampleforward(rng::AbstractRNG, process::IndependentDiscreteDiffusion, t::Real, x::AbstractArray) =
+_sampleforward(rng::AbstractRNG, process::IndependentDiscreteDiffusion, t::Real, x::AbstractArray) =
     sample(rng, forward(process, x, 0, t))

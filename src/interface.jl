@@ -17,21 +17,17 @@ sampleforward(
     x::NTuple{N, AbstractArray}
 ) where N = sampleforward.(rng, process, (t,), x)
 
-sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x::AbstractVector) =
-    sampleforward(rng, process, t, x')'
-
-function sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x::AbstractArray)
-    d = ndims(x)
-    x_t = similar(x)
-    for i in axes(x, d)
-        selectdim(x_t, d, i) .= sampleforward(rng, process, t[i], selectdim(x, d, i))
-    end
-    return x_t
+function sampleforward(rng::AbstractRNG, process::Process, t::Real, x::AbstractArray)
+    x = copy(x)
+    maskedvec(x) .= _sampleforward(rng, process, t, maskedvec(x))
+    return x
 end
 
-function sampleforward(rng::AbstractRNG, process::Process, t::Real, x::MaskedArray)
+function sampleforward(rng::AbstractRNG, process::Process, t::AbstractVector{<: Real}, x::AbstractArray)
     x = copy(x)
-    maskedvec(x) .= sampleforward(rng, process, t, maskedvec(x))
+    for i in axes(x, ndims(x))
+        maskedvec(x, i) .= _sampleforward(rng, process, t[i], maskedvec(x, i))
+    end
     return x
 end
 
