@@ -174,6 +174,14 @@ end
     @test all(x_t[m] .!= x_0[m])
     @test all(x_t[.!m] .== x_0[.!m])
 
+    # batched
+    t = rand(10)
+    x_t = sampleforward(process, t, masked)
+    @test size(x_t) == size(x_0)
+    @test x_t isa MaskedArray
+    @test all(x_t[m] .!= x_0[m])
+    @test all(x_t[.!m] .== x_0[.!m])
+
     function guess(x, t)
         # random "guess" for testing
         x = copy(x)

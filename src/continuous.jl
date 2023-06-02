@@ -29,5 +29,5 @@ function backward(process::OrnsteinUhlenbeckDiffusion, x_t::AbstractArray, s::Re
     return (μ = mean, σ² = var)
 end
 
-sampleforward(rng::AbstractRNG, process::Process, t::Real, x::AbstractArray) =
+_sampleforward(rng::AbstractRNG, process::OrnsteinUhlenbeckDiffusion, t::Real, x::AbstractArray) =
     sample(rng, forward(process, x, 0, t))

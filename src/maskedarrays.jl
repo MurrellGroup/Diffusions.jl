@@ -36,6 +36,12 @@ Return a view of masked elements as a vector.
 maskedvec(A::MaskedArray) = view(A.data, A.indices)
 maskedvec(A::AbstractArray) = view(A, :)
 
+maskedvec(A::MaskedArray, i::Integer) = view(A.data, filter(j -> lastdimindex(A, j) == i, A.indices))
+maskedvec(A::AbstractArray, i::Integer) = vec(selectdim(A, ndims(A), i))
+
+# i is a linear index
+lastdimindex(A::AbstractArray, i::Integer) = CartesianIndices(A)[i][ndims(A)]
+
 """
     mask(data, mask)
 
