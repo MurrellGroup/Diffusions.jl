@@ -16,12 +16,11 @@ rot_ang(x) = oftype(x, 1/18)*(1-x)*(x-13)^2
 #rot_ang(x) = -8(x-1) + (4/3)*(x-1)^2 - (16/45)*(x-1)^3 + (4/35)*(x-1)^4 #Longer expansion
 #-----Playing with rotations------
 
-# Scale A with s along the last dimension (i.e., batch dimension)
-scalebatch(A::AbstractArray, s::Real) = A ./ s
-scalebatch(A::AbstractArray, s::AbstractVector{<: Real}) =
-    A ./ reshape(s, ntuple(i -> 1, ndims(A) - 1)..., :)
-
-scaledloss(loss, indices, s) = mean(scalebatch(loss, s)[indices])
+# TODO: Figure out a way to avoid `repeat`ing `s` without causing NaN issues
+# when calculating the gradients (#47)?
+scaledloss(loss, indices, s::Real) = mean(loss[indices] ./ s)
+scaledloss(loss, indices, s::AbstractVector{<: Real}) =
+    mean(loss[indices] ./ repeat(reshape(s, ntuple(i -> 1, ndims(loss) - 1)..., :), Base.front(size(loss))..., 1)[indices])
 
 maskedindices(x::MaskedArray) = x.indices
 maskedindices(x::AbstractArray) = eachindex(x)
