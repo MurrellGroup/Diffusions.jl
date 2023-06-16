@@ -61,13 +61,13 @@ function samplebackward(rng::AbstractRNG, guess, process, timesteps, x; tracker 
 end
 
 # sample x at time s conditioned on x_0 at time 0 and x_t at time t
-function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real, t::Real, x_0, x_t)
+function endpoint_conditioned_sample(rng::AbstractRNG, process::TractableProcess, s::Real, t::Real, x_0, x_t)
     prior = forward(process, x_0, 0, s)
     likelihood = backward(process, x_t, s, t)
     return sample(rng, combine(prior, likelihood))
 end
 
-function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real, t::Real, x_0::MaskedArray, x_t::MaskedArray)
+function endpoint_conditioned_sample(rng::AbstractRNG, process::TractableProcess, s::Real, t::Real, x_0::MaskedArray, x_t::MaskedArray)
     prior = forward(process, maskedvec(x_0), 0, s)
     likelihood = backward(process, maskedvec(x_t), s, t)
     x = copy(x_t)
