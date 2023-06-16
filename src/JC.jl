@@ -33,8 +33,11 @@ end
 #pls check for correctness, and make sure types are preserved
 #This works by pre-calculating the five possible outcomes of the combine(fwd(X0),back(Xt)) of JC69
 #Then only sampling when the random draw suggests the state will differ from Xt.
-function endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0, Xt)
-    Xs = copy(Xt)
+function _endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0, Xt)
+    Xs_full = copy(Xt)
+    Xs = maskedvec(Xs_full)
+    X0 = maskedvec(X0)
+    Xt = maskedvec(Xt)
     k = P.k
     Fw = 1-exp(-s*P.rate)
     Bk = 1-exp(-(t-s)*P.rate)
@@ -72,5 +75,9 @@ function endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusi
             end
         end
     end
-    return Xs
+    return Xs_full
 end
+
+endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0, Xt) = _endpoint_conditioned_sample(rng, P, s, t, X0, Xt)
+#To resolve method ambiguity
+endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0, Xt::MaskedArray) = _endpoint_conditioned_sample(rng, P, s, t, X0, Xt)
