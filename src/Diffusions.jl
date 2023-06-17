@@ -12,6 +12,7 @@ module Diffusions
     using MLUtils: flatten
 
     include("types.jl")
+    include("maskedarrays.jl")
     include("randomvariable.jl")
     include("continuous.jl")
     include("discrete.jl")
@@ -21,7 +22,6 @@ module Diffusions
     include("tracker.jl")
     include("utils.jl")
     include("randomfourierfeatures.jl")
-    include("maskedarrays.jl")
     include("interface.jl")
     include("loss.jl")
 
