@@ -33,7 +33,7 @@ end
 #pls check for correctness, and make sure types are preserved
 #This works by pre-calculating the five possible outcomes of the combine(fwd(X0),back(Xt)) of JC69
 #Then only sampling when the random draw suggests the state will differ from Xt.
-function endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0, Xt)
+function _endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0, Xt)
     Xs_full = copy(Xt)
     Xs = maskedvec(Xs_full)
     X0 = maskedvec(X0)
@@ -77,3 +77,8 @@ function endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusi
     end
     return Xs_full
 end
+
+endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0, Xt) = _endpoint_conditioned_sample(rng, P, s, t, X0, Xt)
+endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0::MaskedArray, Xt::MaskedArray) = _endpoint_conditioned_sample(rng, P, s, t, X0, Xt)
+#When only the starting array is masked, we force X0 to inherit its mask, so that the X0 estimating function doesn't have to track the masking.
+endpoint_conditioned_sample(rng::AbstractRNG, P::UniformDiscreteDiffusion, s::Real, t::Real, X0, Xt::MaskedArray) = _endpoint_conditioned_sample(rng, P, s, t, MaskedArray(copy(X0), copy(Xt.indices)), Xt)
