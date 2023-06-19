@@ -31,3 +31,9 @@ end
 
 _sampleforward(rng::AbstractRNG, process::OrnsteinUhlenbeckDiffusion, t::Real, x::AbstractArray) =
     sample(rng, forward(process, x, 0, t))
+
+function _endpoint_conditioned_sample(rng::AbstractRNG, process::OrnsteinUhlenbeckDiffusion, s::Real, t::Real, x_0::AbstractArray, x_t::AbstractArray)
+    prior = forward(process, x_0, 0, s)
+    likelihood = backward(process, x_t, s, t)
+    return sample(rng, combine(prior, likelihood))
+end

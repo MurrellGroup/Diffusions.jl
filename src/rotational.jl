@@ -41,7 +41,7 @@ RotationDiffusion() = RotationDiffusion(1.0)
 _sampleforward(rng::AbstractRNG, process::RotationDiffusion, t::Real, x::AbstractArray) =
     rotation_diffuse.(rng, x, t * process.rate)
 
-endpoint_conditioned_sample(rng::AbstractRNG, process::RotationDiffusion, s::Real, t::Real, x_0, x_t) =
+_endpoint_conditioned_sample(rng::AbstractRNG, process::RotationDiffusion, s::Real, t::Real, x_0, x_t) =
     rotation_bridge.(rng, x_0, x_t, (t - s) * process.rate, t * process.rate)
 
 function rots2flatquats(r::AbstractArray{QuatRotation{T}}) where T

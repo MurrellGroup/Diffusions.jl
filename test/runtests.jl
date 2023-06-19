@@ -193,6 +193,38 @@ end
     @test x isa MaskedArray
     @test all(x[m] .!= x_t[m])
     @test all(x[.!m] .== x_t[.!m])
+
+    @testset "UniformDiscreteDiffusion" begin
+        n = 100
+        process = UniformDiscreteDiffusion(1.0, 4)
+        x_0 = rand(1:4, 10, n)
+        m = rand(size(x_0)...) .< 0.5
+        masked = mask(x_0, m)
+        x_t = sampleforward(process, 1.0, masked)
+        @test size(x_t) == size(x_0)
+        @test x_t isa MaskedArray
+        @test any(x_t[m] .!= x_0[m])
+        @test all(x_t[.!m] .== x_0[.!m])
+
+        # batched
+        t = rand(n)
+        x_t = sampleforward(process, t, masked)
+        @test size(x_t) == size(x_0)
+        @test x_t isa MaskedArray
+        @test any(x_t[m] .!= x_0[m])
+        @test all(x_t[.!m] .== x_0[.!m])
+
+        function guess(x, t)
+            x = copy(x)
+            maskedvec(x) .= rand(1:4, nmasked(x))
+            return x
+        end
+        x = samplebackward(guess, process, [1/8, 1/4, 1/2, 1/1], x_t)
+        @test size(x_t) == size(x_0)
+        @test x_t isa MaskedArray
+        @test any(x_t[m] .!= x_0[m])
+        @test all(x_t[.!m] .== x_0[.!m])
+    end
 end
 
 @testset "Loss" begin
