@@ -172,36 +172,38 @@ end
 end
 
 @testset "Masked Diffusion" begin
-    process = OrnsteinUhlenbeckDiffusion(0.0, 1.0, 0.5)
-    x_0 = randn(5, 10)
-    m = x_0 .< 0
-    masked = mask(x_0, m)
-    x_t = sampleforward(process, 1.0, masked)
-    @test size(x_t) == size(x_0)
-    @test x_t isa MaskedArray
-    @test all(x_t[m] .!= x_0[m])
-    @test all(x_t[.!m] .== x_0[.!m])
+    @testset "OrnsteinUhlenbeckDiffusion" begin
+        process = OrnsteinUhlenbeckDiffusion(0.0, 1.0, 0.5)
+        x_0 = randn(5, 10)
+        m = x_0 .< 0
+        masked = mask(x_0, m)
+        x_t = sampleforward(process, 1.0, masked)
+        @test size(x_t) == size(x_0)
+        @test x_t isa MaskedArray
+        @test all(x_t[m] .!= x_0[m])
+        @test all(x_t[.!m] .== x_0[.!m])
 
-    # batched
-    t = rand(10)
-    x_t = sampleforward(process, t, masked)
-    @test size(x_t) == size(x_0)
-    @test x_t isa MaskedArray
-    @test all(x_t[m] .!= x_0[m])
-    @test all(x_t[.!m] .== x_0[.!m])
+        # batched
+        t = rand(10)
+        x_t = sampleforward(process, t, masked)
+        @test size(x_t) == size(x_0)
+        @test x_t isa MaskedArray
+        @test all(x_t[m] .!= x_0[m])
+        @test all(x_t[.!m] .== x_0[.!m])
 
-    function guess(x, t)
-        # random "guess" for testing
-        x = copy(x)
-        maskedvec(x) .+= randn(nmasked(x))
-        return x
+        function guess(x, t)
+            # random "guess" for testing
+            x = copy(x)
+            maskedvec(x) .+= randn(nmasked(x))
+            return x
+        end
+        x = samplebackward(guess, process, [1/8, 1/4, 1/2, 1/1], x_t)
+        @test size(x) == size(x_t)
+        @test x isa MaskedArray
+        @test all(x[m] .!= x_t[m])
+        @test all(x[.!m] .== x_t[.!m])
     end
-    x = samplebackward(guess, process, [1/8, 1/4, 1/2, 1/1], x_t)
-    @test size(x) == size(x_t)
-    @test x isa MaskedArray
-    @test all(x[m] .!= x_t[m])
-    @test all(x[.!m] .== x_t[.!m])
-
+    
     @testset "UniformDiscreteDiffusion" begin
         n = 100
         process = UniformDiscreteDiffusion(1.0, 4)
