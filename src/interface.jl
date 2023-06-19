@@ -69,9 +69,11 @@ function samplebackward(rng::AbstractRNG, guess, process, timesteps, x; tracker=
     return x
 end
 
-function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real, t::Real, x_0::AbstractArray, x_t::MaskedArray)
-    # x_0 inherits masked elements from x_t
-    x_0 = MaskedArray(x_0, x_t.indices)
+function endpoint_conditioned_sample(rng::AbstractRNG, process::Process, s::Real, t::Real, x_0::AbstractArray, x_t::AbstractArray)
+    if x_t isa MaskedArray
+        # x_0 inherits masked elements from x_t
+        x_0 = MaskedArray(x_0, x_t.indices)
+    end
     x = copy(x_t)
     maskedvec(x) .= _endpoint_conditioned_sample(rng, process, s, t, maskedvec(x_0), maskedvec(x_t))
     return x

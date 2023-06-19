@@ -163,6 +163,14 @@ end
     @test rff([1.0]) isa Matrix{Float32}
 end
 
+@testset "Backward Diffusion" begin
+    process = OrnsteinUhlenbeckDiffusion(0.0)
+    x_t = randn(4, 10)
+    x = samplebackward((x, t) -> x + randn(size(x)), process, [1/8, 1/4, 1/2, 1/1], x_t)
+    @test size(x) == size(x_t)
+    @test x isa Matrix
+end
+
 @testset "Masked Diffusion" begin
     process = OrnsteinUhlenbeckDiffusion(0.0, 1.0, 0.5)
     x_0 = randn(5, 10)
