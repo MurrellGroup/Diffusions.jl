@@ -9,7 +9,7 @@ function rotation_diffuse(rng::AbstractRNG, Rstart::QuatRotation, T::Real; max_v
     B = Rstart
     remaining_var = T
     while remaining_var > 0
-        B *= randrot(rng, max_var_step)
+        B *= randrot(rng, min(max_var_step, remaining_var))
         remaining_var -= max_var_step
     end
     return B
