@@ -9,9 +9,11 @@ function rotation_diffuse(rng::AbstractRNG, Rstart::QuatRotation, T::Real; max_v
     B = Rstart
     remaining_var = T
     while remaining_var > 0
-        B *= randrot(rng, min(max_var_step, remaining_var))
-        remaining_var -= max_var_step
+        var = min(max_var_step, remaining_var)
+        B *= randrot(rng, var)
+        remaining_var -= var
     end
+    @assert iszero(remaining_var)
     return B
 end
 
