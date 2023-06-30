@@ -68,6 +68,12 @@ end
     @test x_t isa typeof(x_0)
     @test size(x_t[1]) == size(x_0[1])
     @test size(x_t[2]) == size(x_0[2])
+
+    # numeric test (issue #55)
+    diffusion = RotationDiffusion(4.0f0)
+    x = one(QuatRotation{Float32})
+    t = 0.29999998f0
+    @test sampleforward(diffusion, t, [x]) isa Vector
 end
 
 @testset "Discrete Diffusions" begin
