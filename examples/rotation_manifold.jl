@@ -78,7 +78,7 @@ for iter in 1:250000
     #Loss and gradient
     l,gs = Flux.withgradient(ps) do
         x0hat_flatquats = rotmodel(xt_flatquats,t)
-        standardloss(P, t, x0hat_flatquats, x0_flatquats)
+        standardloss(P, t, x0hat_flatquats, x0)
     end
     
     #Update the parameters

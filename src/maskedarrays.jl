@@ -8,6 +8,10 @@ struct MaskedArray{T, N, A <: AbstractArray, I <: AbstractVector{<: Integer}} <:
     end
 end
 
+# avoid nested masking
+MaskedArray(data::MaskedArray, indices::AbstractVector{<: Integer}) =
+    MaskedArray(parent(data), indices)
+
 Base.size(A::MaskedArray) = size(A.data)
 Base.copy(A::MaskedArray) = MaskedArray(copy(A.data), copy(A.indices))
 Base.getindex(A::MaskedArray, i...) = A.data[i...]
