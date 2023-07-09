@@ -6,13 +6,14 @@ end
 
 #T is in units of var
 function rotation_diffuse(rng::AbstractRNG, Rstart::QuatRotation, T::Real; max_var_step::Real = oftype(T, 0.05))
-    remaining_var = T
     B = Rstart
-    for t in max_var_step:max_var_step:T
-        B *= randrot(rng, max_var_step)
-        remaining_var = T - t
+    remaining_var = T
+    while remaining_var > 0
+        var = min(max_var_step, remaining_var)
+        B *= randrot(rng, var)
+        remaining_var -= var
     end
-    B *= randrot(rng, remaining_var)
+    @assert iszero(remaining_var)
     return B
 end
 
