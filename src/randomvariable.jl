@@ -9,11 +9,12 @@ end
 
 Base.size(X::GaussianVariables) = size(X.μ)
 
-sample(rng::AbstractRNG, X::GaussianVariables{T}) where T = randn(rng, T, size(X)) .* .√X.σ² .+ X.μ
+sample(rng::AbstractRNG, X::GaussianVariables{T}) where T =
+    elmwisemul.(randn(rng, T, size(X)), elmwisesqrt.(X.σ²)) .+ X.μ
 
 function combine(X::GaussianVariables, lik)
-    σ² = @. inv(inv(X.σ²) + inv(lik.σ²))
-    μ = @. σ² * (X.μ / X.σ² + lik.μ / lik.σ²)
+    σ² = elmwiseinv.(elmwiseinv.(X.σ²) .+ elmwiseinv.(lik.σ²))
+    μ = elmwisemul.(σ², elmwisediv.(X.μ, X.σ²) .+ elmwisediv.(lik.μ, lik.σ²))
     return GaussianVariables(μ, σ²)
 end
 

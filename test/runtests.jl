@@ -74,6 +74,16 @@ end
     x = one(QuatRotation{Float32})
     t = 0.29999998f0
     @test sampleforward(diffusion, t, [x]) isa Vector
+
+    # three-dimensional diffusion
+    μ = @SVector [0.0, 0.0, 0.0]
+    θ = @SVector [1.0, 1.0, 1.0]
+    σ = @SVector [0.5, 0.5, 0.5]
+    x_0 = [zero(μ), zero(μ)]
+    diffusion = OrnsteinUhlenbeckDiffusion(μ, σ, θ)
+    x_t = sampleforward(diffusion, 1.0, x_0)
+    @test x_t isa typeof(x_0)
+    @test size(x_t) == size(x_0)
 end
 
 @testset "Discrete Diffusions" begin
@@ -173,6 +183,15 @@ end
     process = OrnsteinUhlenbeckDiffusion(0.0)
     x_t = randn(4, 10)
     x = samplebackward((x, t) -> x + randn(size(x)), process, [1/8, 1/4, 1/2, 1/1], x_t)
+    @test size(x) == size(x_t)
+    @test x isa Matrix
+
+    μ = @SVector [0.0, 0.0, 0.0]
+    θ = @SVector [1.0, 1.0, 1.0]
+    σ = @SVector [0.5, 0.5, 0.5]
+    x_t = randn(typeof(μ), 4, 10)
+    process = OrnsteinUhlenbeckDiffusion(μ, σ, θ)
+    x = samplebackward((x, t) -> x + randn(eltype(x), size(x)), process, [1/8, 1/4, 1/2, 1/1], x_t)
     @test size(x) == size(x_t)
     @test x isa Matrix
 end
