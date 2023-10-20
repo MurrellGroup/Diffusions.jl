@@ -37,6 +37,16 @@ function standardloss(
     return scaledloss(loss(x̂, parent(x)), maskedindices(x), (t -> scaler(p, t)).(t))
 end
 
+function standardloss(
+    p::OrnsteinUhlenbeckDiffusion,
+    t::Union{Real,AbstractVector{<:Real}},
+    x̂::AbstractArray{<: SVector}, x::AbstractArray{<: SVector};
+    scaler=defaultscaler)
+    loss(x̂, x) = norm.(x̂ .- x).^2
+    # ugly syntax but scaler.(p, t) is not differentiable with Zygote.jl for some reason
+    return scaledloss(loss(x̂, parent(x)), maskedindices(x), (t -> scaler(p, t)).(t))
+end
+
 defaultscaler(p::RotationDiffusion, t::Real) = sqrt(1 - exp(-t * p.rate * 5))
 
 function standardloss(
