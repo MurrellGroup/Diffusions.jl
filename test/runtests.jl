@@ -76,11 +76,8 @@ end
     @test sampleforward(diffusion, t, [x]) isa Vector
 
     # three-dimensional diffusion
-    μ = @SVector [0.0, 0.0, 0.0]
-    θ = @SVector [1.0, 1.0, 1.0]
-    σ = @SVector [0.5, 0.5, 0.5]
-    x_0 = [zero(μ), zero(μ)]
-    diffusion = OrnsteinUhlenbeckDiffusion(μ, σ, θ)
+    diffusion = OrnsteinUhlenbeckDiffusion(0.0)
+    x_0 = fill(zero(SVector{3, Float64}), 2)
     x_t = sampleforward(diffusion, 1.0, x_0)
     @test x_t isa typeof(x_0)
     @test size(x_t) == size(x_0)
@@ -186,11 +183,8 @@ end
     @test size(x) == size(x_t)
     @test x isa Matrix
 
-    μ = @SVector [0.0, 0.0, 0.0]
-    θ = @SVector [1.0, 1.0, 1.0]
-    σ = @SVector [0.5, 0.5, 0.5]
-    x_t = randn(typeof(μ), 4, 10)
-    process = OrnsteinUhlenbeckDiffusion(μ, σ, θ)
+    process = OrnsteinUhlenbeckDiffusion(0.0)
+    x_t = randn(SVector{3, Float64}, 4, 10)
     x = samplebackward((x, t) -> x + randn(eltype(x), size(x)), process, [1/8, 1/4, 1/2, 1/1], x_t)
     @test size(x) == size(x_t)
     @test x isa Matrix
@@ -263,8 +257,8 @@ end
 end
 
 @testset "Loss" begin
-    p = OrnsteinUhlenbeckDiffusion(0.0, 1.0, 0.5)
-    x_0 = randn(5, 10)
+    p = OrnsteinUhlenbeckDiffusion(0.0)
+    x_0 = zeros(5, 10)
     t = rand(10)
     @test standardloss(p, t, x_0, x_0) == 0
     x = rand(5, 10)
@@ -272,14 +266,25 @@ end
 
     # unmasked elements don't contribute to the loss
     x = copy(x_0)
-    m = x_0 .< 0
+    m = rand(size(x)...) .< 0.5
+    x[.!m] .= 1
     x_0 = mask(x_0, m)
-    x[.!m] .= 0
     @test standardloss(p, t, x, x_0) == 0
+    @test standardloss(p, t, x, parent(x_0)) > 0
 
-    # but masked elements do
-    x[m] .= 0
+    p = OrnsteinUhlenbeckDiffusion(0.0)
+    x_0 = fill(zero(SVector{3, Float64}), 10)
+    t = rand(10)
+    @test standardloss(p, t, x_0, x_0) == 0
+    x = [rand(SVector{3, Float64}) for _ in eachindex(x_0)]
     @test standardloss(p, t, x, x_0) > 0
+
+    x = copy(x_0)
+    m = rand(size(x)...) .< 0.5
+    x[.!m] .= (ones(SVector{3, Float64}),)
+    x_0 = mask(x_0, m)
+    @test standardloss(p, t, x, x_0) == 0
+    @test standardloss(p, t, x, parent(x_0)) > 0
 end
 
 @testset "Autodiff" begin
