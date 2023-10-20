@@ -5,10 +5,7 @@ struct OrnsteinUhlenbeckDiffusion{T <: Real} <: GaussianStateProcess
     reversion::T
 end
 
-function OrnsteinUhlenbeckDiffusion(mean::Real, volatility::Real, reversion::Real)
-    μ, σ, θ = float.(promote(mean, volatility, reversion))
-    return OrnsteinUhlenbeckDiffusion{typeof(μ)}(μ, σ, θ)
-end
+OrnsteinUhlenbeckDiffusion(mean::Real, volatility::Real, reversion::Real) = OrnsteinUhlenbeckDiffusion(float.(promote(mean, volatility, reversion))...)
 
 OrnsteinUhlenbeckDiffusion(mean::T) where T <: Real = OrnsteinUhlenbeckDiffusion(mean,T(1.0),T(0.5))
 
@@ -24,7 +21,7 @@ elmwisediv(x, y) = x ./ y
 
 function forward(process::OrnsteinUhlenbeckDiffusion, x_s::AbstractArray, s::Real, t::Real)
     μ, σ, θ = process.mean, process.volatility, process.reversion
-    # exp(-(t - s) * θ) * (x_s .- μ) .+ μ
+    # exp(-(t - s) * θ) * (x_s - μ) + μ
     mean = elmwiseadd.(elmwisemul.(exp(-(t - s) * θ), elmwisesub.(x_s, μ)), μ)
     var = ((1 - exp(-2(t - s) * θ)) * σ^2) / 2θ
     return GaussianVariables(mean, var)
