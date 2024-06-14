@@ -24,7 +24,7 @@ using Test
 end
 
 @testset "Diffusion" begin
-    diffusion = OrnsteinUhlenbeckDiffusion(0.0)
+    diffusion = OrnsteinUhlenbeckDiffusion(1.0)
 
     # 2d diffusion
     x_0 = randn(2)
@@ -51,7 +51,7 @@ end
     @test size(x_t) == size(x_0)
 
     diffusion = (
-        OrnsteinUhlenbeckDiffusion(0.0),
+        OrnsteinUhlenbeckDiffusion(1.0),
         UniformDiscreteDiffusion(1.0, 4),
     )
 

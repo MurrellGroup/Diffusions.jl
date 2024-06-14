@@ -30,8 +30,8 @@ function monte_carlo_expect(g2,T; P = P, sample_func = target_sample, n_samples 
     return g0.μ
 end
 
-#Define a zero-mean OU process, with default volitility and reversion parameters
-P = OrnsteinUhlenbeckDiffusion(0.0)
+#Define a zero-mean OU process, with reversion 0.5 and default volitility
+P = OrnsteinUhlenbeckDiffusion(0.5)
 
 #We'll work with 2-by-500 gaussians, where each pair is one point that will become cat-distributed
 x_T = rand(eq_dist(P),(2,400))
