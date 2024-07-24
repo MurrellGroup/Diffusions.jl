@@ -98,3 +98,30 @@ function standardloss(
     xx = stack([getindex.(parent(x), i) for i in 1:K], dims = 1)
     return scaledloss(loss(x̂, xx), maskedindices(x), (t -> scaler(p, t)).(t)) / ((K - 1) / K) * 1.44f0
 end
+
+function standardloss(
+    p::MaskedDiscreteDiffusion,
+    t::Union{Real,AbstractVector{<:Real}},
+    x̂, x,
+    diffusedOH;
+    scaler=defaultscaler
+)
+    α_t, α_prime = p.α(t)
+    scaling_factor = α_prime ./ (1 .- α_t)
+
+    if ndims(x̂) == 2  # Non-batched data
+        masked_indices = findall(diffusedOH[end, :] .== 1)
+        x̂_masked = x̂[:, masked_indices]
+        x_masked = x[:, masked_indices]
+        return logitcrossentropy(x̂, x) .* scaling_factor
+
+    else  # Batched data
+        masked_indices = findall(diffusedOH[end, :, :] .== 1)
+        x̂_masked = x̂[:, masked_indices]
+        x_masked = x[:, masked_indices]
+        losses = logitcrossentropy.(eachslice(x̂, dims=3), eachslice(x, dims=3))
+
+        return mean(losses .* scaling_factor)
+
+    end
+end

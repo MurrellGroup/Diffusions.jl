@@ -54,3 +54,65 @@ function _endpoint_conditioned_sample(rng::AbstractRNG, process::IndependentDisc
     likelihood = backward(process, x_t, s, t)
     return sample(rng, combine(prior, likelihood))
 end
+
+
+struct MaskedDiscreteDiffusion <: DiscreteStateProcess
+    vocab_size::Int
+    mask_token_id
+    α::Function
+end
+
+function _sampleforward(rng::AbstractRNG, process::MaskedDiscreteDiffusion, t::Real, x::AbstractArray)
+    # Get the keep probability
+    α_t = process.α(t)[1] 
+    
+    vocab_size = process.vocab_size 
+    num_tokens = length(x) ÷ vocab_size
+    
+    result = falses(length(x))
+    
+    for i in 1:num_tokens
+        token_slice = (i-1)*vocab_size + 1 : i*vocab_size
+        if rand(rng) < α_t
+            # Keep the original token
+            result[token_slice] = x[token_slice]
+        else
+            # Mask the token
+            result[token_slice[process.mask_token_id]] = true
+        end
+    end
+    
+    return result
+end
+
+function _endpoint_conditioned_sample(
+    rng::AbstractRNG, 
+    process::MaskedDiscreteDiffusion, 
+    s::Real, 
+    t::Real, 
+    x0::AbstractVector{Bool}, 
+    xt::AbstractVector{Bool}
+)   
+    sequence_length = length(xt) ÷ process.vocab_size
+    xs = copy(xt)
+    
+    α_s = process.α(s)[1]
+    α_t = process.α(t)[1]
+
+    for i in 1:sequence_length
+        token_slice = (i-1)*process.vocab_size + 1 : i*process.vocab_size
+        if xt[token_slice[process.mask_token_id]]
+            probs = zeros(Float32, process.vocab_size)
+            probs[process.mask_token_id] = 1 - α_s
+            predicted_token = findfirst(x0[token_slice])
+            probs[predicted_token] = α_s - α_t
+            probs ./= sum(probs)
+            sampled_token = rand(rng, Categorical(probs))
+            xs[token_slice] .= false
+            xs[token_slice[sampled_token]] = true
+        end
+    end
+
+    return xs
+end
+

@@ -34,6 +34,7 @@ module Diffusions
         IndependentDiscreteDiffusion,
         UniformDiscreteDiffusion,
         RotationDiffusion,
+        MaskedDiscreteDiffusion,
         #Diffusion functions
         sampleforward,
         samplebackward,
