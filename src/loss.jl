@@ -102,26 +102,20 @@ end
 function standardloss(
     p::MaskedDiscreteDiffusion,
     t::Union{Real,AbstractVector{<:Real}},
-    x̂, x,
-    diffusedOH;
-    scaler=defaultscaler
-)
+    x̂, x, mask; scaler=defaultscaler)
+    if sum(mask) == 0
+        return 0.0f0
+    end
     α_t, α_prime = p.α(t)
     scaling_factor = α_prime ./ (1 .- α_t)
 
-    if ndims(x̂) == 2  # Non-batched data
-        masked_indices = findall(diffusedOH[end, :] .== 1)
-        x̂_masked = x̂[:, masked_indices]
-        x_masked = x[:, masked_indices]
-        return logitcrossentropy(x̂, x) .* scaling_factor
+    reshaped_mask = reshape(mask, 1, size(x̂)[2:end]...)
+    loss = logitcrossentropy(x̂, x) .* reshaped_mask
+    summed_loss = sum(loss, dims=2:ndims(loss))
 
-    else  # Batched data
-        masked_indices = findall(diffusedOH[end, :, :] .== 1)
-        x̂_masked = x̂[:, masked_indices]
-        x_masked = x[:, masked_indices]
-        losses = logitcrossentropy.(eachslice(x̂, dims=3), eachslice(x, dims=3))
-
-        return mean(losses .* scaling_factor)
-
+    if isa(scaling_factor, Number)
+        return scaling_factor * sum(summed_loss)
+    else
+        return sum(scaling_factor .* vec(summed_loss))
     end
 end
